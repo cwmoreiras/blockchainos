@@ -7,4 +7,9 @@
 
 int main() {
   block *b;
+
+  b = malloc(sizeof(block));
+  generator(b);
+
+  free(b);
 }

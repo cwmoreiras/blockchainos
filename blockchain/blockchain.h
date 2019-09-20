@@ -1,3 +1,3 @@
-typedef struct blockchain {
+#include "block.h"
 
-} blockchain;
+void generator(block *b);
