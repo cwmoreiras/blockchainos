@@ -1,9 +1,12 @@
+#include <memory.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 
+#include "main.h"
 #include "block.h"
 #include "blockchain.h"
-#include "main.h"
+#include "crypto.h"
 
 int main() {
   block *b;

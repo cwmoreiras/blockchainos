@@ -9,5 +9,5 @@ void generator(block *b) {
 }
 
 void append(block *b) {
-  
+
 }
