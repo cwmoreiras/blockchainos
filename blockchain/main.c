@@ -8,11 +8,13 @@
 #include "blockchain.h"
 #include "crypto.h"
 
+
 int main() {
   block *b;
 
   b = malloc(sizeof(block));
-  generator(b);
+
+  block_create(b);
 
   free(b);
 }
