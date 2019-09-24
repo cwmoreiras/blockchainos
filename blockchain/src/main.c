@@ -14,7 +14,5 @@ int main() {
 
   b = malloc(sizeof(block));
 
-  block_create(b);
-
   free(b);
 }

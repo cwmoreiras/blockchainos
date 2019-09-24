@@ -14,6 +14,7 @@ typedef struct block {
   unsigned char hash[SHA256_BLOCK_SZ];
 } block;
 
-void block_create(block *);
+void block_genesis(block *);
+void block_create(block *, block *);
 
 #endif

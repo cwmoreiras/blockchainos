@@ -1,24 +1,25 @@
-CC       = gcc
-CFLAGS   = -g
-LFLAGS   = -Wall -Wextra
-OBJ_FILE = main.o blockchain.o block.o crypto.o
-EXE_FILE = main
+EXE = main
 
-${EXE_FILE}: ${OBJ_FILE}
-	${CC} ${FLAGS}  ${OBJ_FILE} -o ${EXE_FILE}
-	rm *.o
+SRC_DIR = src
+OBJ_DIR = obj
 
-main.o: main.c
-	${CC} ${LFLAGS} -c main.c
+SRC = $(wildcard $(SRC_DIR)/*.c)
+OBJ = $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
-blockchain.o: blockchain.c
-	${CC} ${FLAGS} -c blockchain.c
+CPPFLAGS += -Iinclude
+CFLAGS += -Wall
+LDFLAGS += -Llib
+LDLIBS += -lm
 
-block.o: block.c
-	${CC} ${LFLAGS} -c block.c
+.PHONY: all clean
 
-crypto.o: crypto.c
-	${CC} ${LFLAGS} -c crypto.c
+all: $(EXE)
+
+$(EXE): $(OBJ)
+	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f ${OBJ_FILE} ${EXE_FILE}
+	$(RM) $(OBJ)
