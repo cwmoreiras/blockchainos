@@ -13,6 +13,7 @@ int main() {
   block *b;
 
   b = malloc(sizeof(block));
+  block_genesis(b);
 
   free(b);
 }

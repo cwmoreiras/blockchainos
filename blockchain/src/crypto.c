@@ -1,22 +1,21 @@
-/*********************************************************************
-* Filename:   crypto.c
-* Author:     Brad Conte (brad AT bradconte.com)
-* Modified:   Carlos Moreiras
-* Copyright:
-* Disclaimer: This code is presented "as is" without any guarantees.
-* Details:    Implementation of the SHA-256 hashing algorithm.
-              SHA-256 is one of the three algorithms in the SHA2
-              specification. The others, SHA-384 and SHA-512, are not
-              offered in this implementation.
-              Algorithm specification can be found here:
-               * http://csrc.nist.gov/publications/fips/
-               * fips180-2/fips180-2withchangenotice.pdf
-              This implementation uses little endian byte order.
-*********************************************************************/
+// -----------------------------------------------------------------------------
+// Filename:   crypto.c
+// Author:     Brad Conte (brad AT bradconte.com)
+// Modified:   Carlos Moreiras
+// Copyright:
+// Disclaimer: This code is presented "as is" without any guarantees.
+// Details:    Implementation of the SHA-256 hashing algorithm.
+//             SHA-256 is one of the three algorithms in the SHA2
+//             specification. The others, SHA-384 and SHA-512, are not
+//             offered in this implementation.
+//             Algorithm specification can be found here:
+//             * http://csrc.nist.gov/publications/fips/
+//             * fips180-2/fips180-2withchangenotice.pdf
+//             This implementation uses little endian byte order.
+// -----------------------------------------------------------------------------
 #include "crypto.h"
 #include <string.h>
 
-/****************************** MACROS ******************************/
 #define ROTLEFT(a,b) (((a) << (b)) | ((a) >> (32-(b))))
 #define ROTRIGHT(a,b) (((a) >> (b)) | ((a) << (32-(b))))
 
@@ -27,7 +26,6 @@
 #define SIG0(x) (ROTRIGHT(x,7) ^ ROTRIGHT(x,18) ^ ((x) >> 3))
 #define SIG1(x) (ROTRIGHT(x,17) ^ ROTRIGHT(x,19) ^ ((x) >> 10))
 
-/**************************** VARIABLES *****************************/
 static const unsigned int k[64] = {
 	0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,
   0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,
@@ -41,7 +39,6 @@ static const unsigned int k[64] = {
   0xc67178f2
 };
 
-/*********************** FUNCTION DEFINITIONS ***********************/
 void sha256_transform(SHA256_CTX *ctx, const unsigned char data[])
 {
 	unsigned int a, b, c, d, e, f, g, h, i, j, t1, t2, m[64];
@@ -145,7 +142,7 @@ void sha256_final(SHA256_CTX *ctx, unsigned char hash[])
 	sha256_transform(ctx, ctx->data);
 
 	// Since this implementation uses little endian byte ordering and SHA uses big
-	// endian, everse all the bytes when copying the final state to the output
+	// endian, reverse all the bytes when copying the final state to the output
   // hash.
 	for (i = 0; i < 4; ++i) {
 		hash[i]      = (ctx->state[0] >> (24 - i * 8)) & 0x000000ff;
