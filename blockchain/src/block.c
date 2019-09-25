@@ -1,5 +1,6 @@
 #include "block.h"
 #include "crypto.h"
+#include "util.h"
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
@@ -8,8 +9,33 @@
 void block_print(const block *b)
 {
   int i;
-  printf("0x");
-  for (i = 0; i < BLOCK_NB_TOTAL; i++)
+  printf("index:           0x");
+  for (i = BLOCK_POS_INDEX; i < BLOCK_POS_TIMESTAMP; i++)
+    printf("%02x", b->buf[i]);
+  printf("\n");
+
+  printf("timestamp:       0x");
+  for (; i < BLOCK_POS_DATA; i++)
+    printf("%02x", b->buf[i]);
+  printf("\n");
+
+  printf("data:            0x");
+  for (; i < BLOCK_POS_PREVHASH; i++)
+    printf("%02x", b->buf[i]);
+  printf("\n");
+
+  printf("prev_hash:       0x");
+  for (; i < BLOCK_POS_HASH; i++)
+    printf("%02x", b->buf[i]);
+  printf("\n");
+
+  printf("hash:            0x");
+  for (; i < BLOCK_SZ; i++)
+    printf("%02x", b->buf[i]);
+  printf("\n");
+
+  printf("block:           0x");
+  for (i = 0; i < BLOCK_SZ; i++)
     printf("%02x", b->buf[i]);
   printf("\n");
 }
@@ -22,21 +48,21 @@ void block_genesis(block *b)
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
-
-  unsigned char *msg = (unsigned char *)"hello world";
-  size_t msg_sz = strlen("hello world")+1; // inclide the null
+  unsigned char *msg = (unsigned char *)"hello world. this is a message that \
+    can change but that i w";
+  size_t msg_sz = strlen((char*)msg)+1; // include the null
   time_t ts = time(NULL); // get timestamp
+
   unsigned char hash[BLOCK_NB_HASH];
 
-  memset(b->buf, 0, BLOCK_NB_TOTAL); // initialize the block to all zeroes
-
-  memcpy(&b->buf[BLOCK_NB_INDEX], &ts, BLOCK_NB_TIMESTAMP); // fill the timestamp
-  memcpy(&b->buf[BLOCK_NB_TIMESTAMP], msg, msg_sz); // fill the data
+  memset(b->buf, 0, BLOCK_SZ); // initialize the block to all zeroes
+  memcpy(&b->buf[BLOCK_POS_TIMESTAMP], &ts, BLOCK_NB_TIMESTAMP); // fill ts
+  memcpy(&b->buf[BLOCK_POS_DATA], msg, msg_sz); // fill the data
 
   block_calc_hash(b, hash); // hash this block
 
   // copy the hash into the block
-  memcpy(&b->buf[BLOCK_NB_PREVHASH], hash, BLOCK_NB_HASH);
+  memcpy(&b->buf[BLOCK_POS_HASH], hash, BLOCK_NB_HASH);
 }
 
 /*
@@ -67,7 +93,7 @@ void block_calc_hash(const block *b, unsigned char hash[])
   SHA256_CTX sha[SHA256_DIGEST_SZ];
 
   sha256_init(sha);
-  sha256_update(sha, b->buf, BLOCK_NB_TOTAL);
+  sha256_update(sha, b->buf, BLOCK_SZ-BLOCK_NB_HASH);
   sha256_final(sha, hash);
 
 }
