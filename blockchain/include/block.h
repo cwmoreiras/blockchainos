@@ -5,23 +5,20 @@
 #include <time.h>
 
 // NB prefix -> number of bytes
-#define NB_INDEX     8
-#define NB_TIMESTAMP 8
-#define NB_DATA      64
-#define NB_PREVHASH  64
-#define NB_HASH      64
-#define NB_TOTAL     208
+#define BLOCK_NB_INDEX     8
+#define BLOCK_NB_TIMESTAMP 8
+#define BLOCK_NB_DATA      64
+#define BLOCK_NB_PREVHASH  32
+#define BLOCK_NB_HASH      32
+#define BLOCK_NB_TOTAL     144
 
-typedef struct block {
-  int index;
-  unsigned char prev_hash[SHA256_DIGEST_SZ];
-  time_t timestamp;
-  unsigned char data[SHA256_BLOCK_SZ];
-  unsigned char hash[SHA256_DIGEST_SZ];
+typedef struct {
+  unsigned char buf[BLOCK_NB_TOTAL];
 } block;
 
 void block_genesis(block *);
 void block_create(const block *, block *, const unsigned char[]);
 void block_calc_hash(const block *, unsigned char[]);
+void block_print(const block *);
 
 #endif

@@ -3,6 +3,16 @@
 #include <string.h>
 #include <time.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+void block_print(const block *b)
+{
+  int i;
+  printf("0x");
+  for (i = 0; i < BLOCK_NB_TOTAL; i++)
+    printf("%02x", b->buf[i]);
+  printf("\n");
+}
 
 void block_genesis(block *b)
 // -----------------------------------------------------------------------------
@@ -12,21 +22,24 @@ void block_genesis(block *b)
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
-  unsigned char *data = (unsigned char *)"hello world";
-  size_t datalen = strlen((char*)data) + 1; // hash the null character also
 
-  // 1. first index is 0
-  // 2. previous hash field for initial block is 0
-  // 3. timestamp will be correct
-  // 4. data for the first block is "hello world"
-  // 5. hash the block
-  b->index = 0;
-  memset(b->prev_hash, 0, SHA256_DIGEST_SZ);
-  b->timestamp = time(NULL);
-  memcpy(b->data, data, datalen);
-  block_calc_hash(b, b->hash);
+  unsigned char *msg = (unsigned char *)"hello world";
+  size_t msg_sz = strlen("hello world")+1; // inclide the null
+  time_t ts = time(NULL); // get timestamp
+  unsigned char hash[BLOCK_NB_HASH];
+
+  memset(b->buf, 0, BLOCK_NB_TOTAL); // initialize the block to all zeroes
+
+  memcpy(&b->buf[BLOCK_NB_INDEX], &ts, BLOCK_NB_TIMESTAMP); // fill the timestamp
+  memcpy(&b->buf[BLOCK_NB_TIMESTAMP], msg, msg_sz); // fill the data
+
+  block_calc_hash(b, hash); // hash this block
+
+  // copy the hash into the block
+  memcpy(&b->buf[BLOCK_NB_PREVHASH], hash, BLOCK_NB_HASH);
 }
 
+/*
 void block_create(const block *old_block, block *new_block,
                   const unsigned char data[])
 // -----------------------------------------------------------------------------
@@ -38,16 +51,9 @@ void block_create(const block *old_block, block *new_block,
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
-  // 1. increment the index of the block
-  // 2. copy the previous block's hash into this block
-  // 3. set the timestamp
-  // 4. calculate this block's hash
-  new_block->index = old_block->index+1;
-  memcpy(new_block->prev_hash, old_block->hash, SHA256_DIGEST_SZ);
-  new_block->timestamp = time(NULL);
-  memcpy(new_block->data, data, SHA256_BLOCK_SZ);
-  block_calc_hash(new_block, new_block->hash);
+
 }
+*/
 
 void block_calc_hash(const block *b, unsigned char hash[])
 // -----------------------------------------------------------------------------
@@ -58,23 +64,10 @@ void block_calc_hash(const block *b, unsigned char hash[])
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
-  SHA256_CTX sha;
-  int i;
-  int sum;
+  SHA256_CTX sha[SHA256_DIGEST_SZ];
 
-  unsigned char buf[SHA256_STR_SZ] = "";
+  sha256_init(sha);
+  sha256_update(sha, b->buf, BLOCK_NB_TOTAL);
+  sha256_final(sha, hash);
 
-  sum = b->index; // add the index
-  sum += b->timestamp; // add the timestamp
-  // add the previous hash, which is a number
-  // add the data
-
-
-  snprintf((char *)buf, SHA256_STR_SZ, "%02x", sum);
-
-  sha256_init(&sha);
-  sha256_update(&sha, buf , SHA256_DIGEST_SZ);
-  sha256_final(&sha, hash);
-
-  print_block(b);
 }
