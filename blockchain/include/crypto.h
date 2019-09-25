@@ -14,7 +14,6 @@
 
 #define SHA256_DIGEST_SZ 32 // SHA256 outputs a 32 byte digest
 #define SHA256_BLOCK_SZ 64  // SHA256 operates on 64 byte chunks
-#define SHA256_STR_SZ (SHA256_DIGEST_SZ*2+1)
 
 typedef struct {
 	unsigned char data[SHA256_BLOCK_SZ];

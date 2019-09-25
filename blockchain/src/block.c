@@ -90,10 +90,17 @@ void block_calc_hash(const block *b, unsigned char hash[])
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
+  int sz = 8;
+  unsigned char buf[sz];
+  int i;
+  for (i = 0; i < sz; i++)
+    buf[i] = 0x61;
+
   SHA256_CTX sha[SHA256_DIGEST_SZ];
 
   sha256_init(sha);
-  sha256_update(sha, b->buf, BLOCK_SZ-BLOCK_NB_HASH);
+  sha256_update(sha, (unsigned char *) buf, sz);
+  //sha256_update(sha, b->buf, BLOCK_SZ-BLOCK_NB_HASH);
   sha256_final(sha, hash);
 
 }
