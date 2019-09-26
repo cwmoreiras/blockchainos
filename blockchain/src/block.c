@@ -27,16 +27,8 @@ void block_print_segment(const block *b, const int start, const int end) {
   for (i = start; i < end; i++) {
     printf("%02x", b->buf[i]);
   }
+  printf("\n");
 
-  switch(end) {
-    case BLOCK_POS_INDEX:     printf("%20s", "index\t->\n"); break;
-    case BLOCK_POS_TIMESTAMP: printf("%20s", "timestamp\t->\n"); break;
-    case BLOCK_POS_DATA: ;    printf("%20s", "data\t->\n"); break;
-    case BLOCK_POS_PREVHASH:  printf("%20s", "prev_hash\t->\n"); break;
-    case BLOCK_POS_HASH:      printf("%20s", "hash\t->\n"); break;
-    case BLOCK_SZ:            printf("%20s", "end\t->\n"); break;
-    default:                  printf("%20d\t->\n", end); break;
-  }
 }
 
 
@@ -57,22 +49,15 @@ void block_genesis(block *b)
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
-  uint8_t *msg = (uint8_t *)"hello world. this is a message that \
-    can change but that i ";
+  uint8_t *msg = (uint8_t *)"hello world. this is a message that can change but that i ";
   size_t msg_sz = strlen((char*)msg)+1; // include the null
   time_t ts = time(NULL); // get timestamp
-
-  uint8_t hash[BLOCK_NB_HASH];
 
   memset(b->buf, 0, BLOCK_SZ); // initialize the block to all zeroes
   memcpy(&b->buf[BLOCK_POS_TIMESTAMP], &ts, BLOCK_NB_TIMESTAMP); // fill ts
   memcpy(&b->buf[BLOCK_POS_DATA], msg, msg_sz); // fill the data
 
-  block_calc_hash(b, hash); // hash this block
-
-  // copy the hash into the block
-  memcpy(&b->buf[BLOCK_POS_HASH], hash, BLOCK_NB_HASH);
-
+  block_calc_hash(b); // hash this block, and store the hash
 }
 
 /*
@@ -91,7 +76,7 @@ void block_create(const block *old_block, block *new_block,
 }
 */
 
-void block_calc_hash(const block *b, uint8_t hash[])
+void block_calc_hash(block *b)
 // -----------------------------------------------------------------------------
 // func: calculate the hash of the passed block
 // args: b - the block for which a hash is desired
@@ -100,10 +85,16 @@ void block_calc_hash(const block *b, uint8_t hash[])
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
+  uint8_t hash[BLOCK_NB_HASH];
   SHA256_CTX sha[SHA256_DIGEST_LENGTH];
 
   SHA256_Init(sha);
-  SHA256_Update(sha, b->buf, BLOCK_SZ);
+
+  // hash the whole block except the part that contains where the hash going
+  // to go
+  SHA256_Update(sha, b->buf, BLOCK_SZ-BLOCK_NB_HASH);
   SHA256_Final(hash, sha);
 
+  // copy the hash into the block
+  memcpy(&b->buf[BLOCK_POS_HASH], hash, BLOCK_NB_HASH);
 }

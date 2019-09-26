@@ -10,21 +10,15 @@
 
 int main() {
   block *b;
-  /*
-  printf("sizeof unsighed char:      %ld\n", sizeof(unsigned char));
-  printf("sizeof unsigned int:       %ld\n",  sizeof(unsigned int));
-  printf("sizeof unsigned long long: %ld\n", sizeof(unsigned long long));
-
-  printf("sizeof uint8_t:            %ld\n", sizeof(uint8_t));
-  printf("sizeof uint32_t:           %ld\n",  sizeof(unsigned int));
-  printf("sizeof uint64_t:           %ld\n", sizeof(unsigned long long));
-  */
 
   b = malloc(sizeof(block));
   block_genesis(b);
 
   block_print(b);
-  util_buf_write_raw(b->buf, BLOCK_SZ, "mainout");
+
+  // dont write out the hash for the test
+  // we want to hash it without that segment
+  util_buf_write_raw(b->buf, BLOCK_SZ-BLOCK_NB_HASH, "mainout");
 
   free(b);
 }
