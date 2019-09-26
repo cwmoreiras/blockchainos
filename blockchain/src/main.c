@@ -6,11 +6,9 @@
 
 #include "main.h"
 #include "block.h"
-#include "crypto.h"
 
 int main() {
   block *b;
-
   /*
   printf("sizeof unsighed char:      %ld\n", sizeof(unsigned char));
   printf("sizeof unsigned int:       %ld\n",  sizeof(unsigned int));

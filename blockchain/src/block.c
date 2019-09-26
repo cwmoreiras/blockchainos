@@ -1,5 +1,4 @@
 #include "block.h"
-#include "crypto.h"
 #include "util.h"
 #include <string.h>
 #include <stdint.h>
@@ -12,38 +11,41 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
+void block_print_segment(const block *b, const int start, const int end) {
+  int i;
+
+  switch(start) {
+    case BLOCK_POS_INDEX:     printf("%-10s-> 0x", "index"); break;
+    case BLOCK_POS_TIMESTAMP: printf("%-10s-> 0x", "timestamp"); break;
+    case BLOCK_POS_DATA: ;    printf("%-10s-> 0x", "data"); break;
+    case BLOCK_POS_PREVHASH:  printf("%-10s-> 0x", "prev_hash"); break;
+    case BLOCK_POS_HASH:      printf("%-10s-> 0x", "hash"); break;
+    default:                  printf("%-10d-> 0x", start); break;
+  }
+
+  for (i = start; i < end; i++) {
+    printf("%02x", b->buf[i]);
+  }
+
+  switch(end) {
+    case BLOCK_POS_INDEX:     printf("%20s", "index\t->\n"); break;
+    case BLOCK_POS_TIMESTAMP: printf("%20s", "timestamp\t->\n"); break;
+    case BLOCK_POS_DATA: ;    printf("%20s", "data\t->\n"); break;
+    case BLOCK_POS_PREVHASH:  printf("%20s", "prev_hash\t->\n"); break;
+    case BLOCK_POS_HASH:      printf("%20s", "hash\t->\n"); break;
+    case BLOCK_SZ:            printf("%20s", "end\t->\n"); break;
+    default:                  printf("%20d\t->\n", end); break;
+  }
+}
+
+
 void block_print(const block *b)
 {
-  int i;
-  printf("index:           0x");
-  for (i = BLOCK_POS_INDEX; i < BLOCK_POS_TIMESTAMP; i++)
-    printf("%02x", b->buf[i]);
-  printf("\n");
-
-  printf("timestamp:       0x");
-  for (; i < BLOCK_POS_DATA; i++)
-    printf("%02x", b->buf[i]);
-  printf("\n");
-
-  printf("data:            0x");
-  for (; i < BLOCK_POS_PREVHASH; i++)
-    printf("%02x", b->buf[i]);
-  printf("\n");
-
-  printf("prev_hash:       0x");
-  for (; i < BLOCK_POS_HASH; i++)
-    printf("%02x", b->buf[i]);
-  printf("\n");
-
-  printf("hash:            0x");
-  for (; i < BLOCK_SZ; i++)
-    printf("%02x", b->buf[i]);
-  printf("\n");
-
-  printf("block:           0x");
-  for (i = 0; i < BLOCK_SZ; i++)
-    printf("%02x", b->buf[i]);
-  printf("\n");
+  block_print_segment(b, BLOCK_POS_INDEX, BLOCK_POS_TIMESTAMP);
+  block_print_segment(b, BLOCK_POS_TIMESTAMP, BLOCK_POS_DATA);
+  block_print_segment(b, BLOCK_POS_DATA, BLOCK_POS_PREVHASH);
+  block_print_segment(b, BLOCK_POS_PREVHASH, BLOCK_POS_HASH);
+  block_print_segment(b, BLOCK_POS_HASH, BLOCK_SZ);
 }
 
 void block_genesis(block *b)
@@ -96,14 +98,13 @@ void block_calc_hash(const block *b, uint8_t hash[])
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
+  uint64_t v = 0;
+  SHA256_CTX sha[SHA256_DIGEST_LENGTH];
 
-  SHA256_CTX sha[SHA256_DIGEST_SZ];
+  SHA256_Init(sha);
+  SHA256_Update(sha, &v, 8);
+  SHA256_Final(hash, sha);
 
-  printf("%s%c", &b->buf[BLOCK_POS_DATA], 0x00);
-  fflush(stdout);
 
-  sha256_init(sha);
-  sha256_update(sha, &b->buf[BLOCK_POS_DATA], 64);
-  sha256_final(sha, hash);
 
 }

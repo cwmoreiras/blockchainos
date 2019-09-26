@@ -1,7 +1,6 @@
 #ifndef BLOCK_H
 #define BLOCK_H
 
-#include "crypto.h"
 #include <stdint.h>
 #include <time.h>
 
@@ -27,6 +26,7 @@ typedef struct {
 void block_genesis(block *);
 void block_create(const block *, block *, const uint8_t[]);
 void block_calc_hash(const block *, uint8_t[]);
-void block_print(const block *);
+void block_print_segment(const block *b, const int start, const int end);
+void block_print(const block *b);
 
 #endif

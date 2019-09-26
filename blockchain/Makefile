@@ -8,8 +8,8 @@ OBJ = $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 CPPFLAGS += -Iinclude
 CFLAGS += -Wall -Wextra -pedantic
-LDFLAGS += -Llib -lssl -crypto
-LDLIBS += -lm
+LDFLAGS += -Llib
+LDLIBS += -lm -lssl -lcrypto
 
 .PHONY: all clean
 
