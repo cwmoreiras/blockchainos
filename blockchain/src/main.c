@@ -6,6 +6,7 @@
 
 #include "main.h"
 #include "block.h"
+#include "util.h"
 
 int main() {
   block *b;
@@ -21,6 +22,9 @@ int main() {
 
   b = malloc(sizeof(block));
   block_genesis(b);
+
+  block_print(b);
+  util_buf_write_raw(b->buf, BLOCK_SZ, "mainout");
 
   free(b);
 }

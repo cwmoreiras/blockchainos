@@ -1,5 +1,6 @@
 #include "block.h"
 #include "util.h"
+
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
@@ -10,10 +11,6 @@
 #include <openssl/ssl.h>
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
-
-void block_write_raw(block *b, int fd) {
-
-}
 
 void block_print_segment(const block *b, const int start, const int end) {
   int i;
@@ -76,7 +73,6 @@ void block_genesis(block *b)
   // copy the hash into the block
   memcpy(&b->buf[BLOCK_POS_HASH], hash, BLOCK_NB_HASH);
 
-  block_print_segment(b, BLOCK_POS_HASH, BLOCK_SZ);
 }
 
 /*
@@ -104,11 +100,10 @@ void block_calc_hash(const block *b, uint8_t hash[])
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
-  uint8_t *str = (uint8_t *)"hello world";
   SHA256_CTX sha[SHA256_DIGEST_LENGTH];
 
   SHA256_Init(sha);
-  SHA256_Update(sha, (int8_t *)str, strlen((int8_t *)str));
+  SHA256_Update(sha, b->buf, BLOCK_SZ);
   SHA256_Final(hash, sha);
 
 }
