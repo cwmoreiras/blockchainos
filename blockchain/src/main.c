@@ -21,7 +21,6 @@ int main() {
 
   b = malloc(sizeof(block));
   block_genesis(b);
-  block_print(b);
 
   free(b);
 }

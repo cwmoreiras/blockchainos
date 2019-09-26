@@ -28,5 +28,6 @@ void block_create(const block *, block *, const uint8_t[]);
 void block_calc_hash(const block *, uint8_t[]);
 void block_print_segment(const block *b, const int start, const int end);
 void block_print(const block *b);
+void block_write_raw();
 
 #endif
