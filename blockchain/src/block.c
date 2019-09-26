@@ -2,9 +2,15 @@
 #include "crypto.h"
 #include "util.h"
 #include <string.h>
+#include <stdint.h>
 #include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <openssl/evp.h>
+#include <openssl/ssl.h>
+#include <openssl/rsa.h>
+#include <openssl/x509.h>
 
 void block_print(const block *b)
 {
@@ -48,12 +54,12 @@ void block_genesis(block *b)
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
-  unsigned char *msg = (unsigned char *)"hello world. this is a message that \
-    can change but that i w";
+  uint8_t *msg = (uint8_t *)"hello world. this is a message that \
+    can change but that i ";
   size_t msg_sz = strlen((char*)msg)+1; // include the null
   time_t ts = time(NULL); // get timestamp
 
-  unsigned char hash[BLOCK_NB_HASH];
+  uint8_t hash[BLOCK_NB_HASH];
 
   memset(b->buf, 0, BLOCK_SZ); // initialize the block to all zeroes
   memcpy(&b->buf[BLOCK_POS_TIMESTAMP], &ts, BLOCK_NB_TIMESTAMP); // fill ts
@@ -67,7 +73,7 @@ void block_genesis(block *b)
 
 /*
 void block_create(const block *old_block, block *new_block,
-                  const unsigned char data[])
+                  const uint8_t data[])
 // -----------------------------------------------------------------------------
 // func: create a new block from the data and previous block info
 // args: old_block - previous block in the chain
@@ -81,7 +87,7 @@ void block_create(const block *old_block, block *new_block,
 }
 */
 
-void block_calc_hash(const block *b, unsigned char hash[])
+void block_calc_hash(const block *b, uint8_t hash[])
 // -----------------------------------------------------------------------------
 // func: calculate the hash of the passed block
 // args: b - the block for which a hash is desired
@@ -90,17 +96,14 @@ void block_calc_hash(const block *b, unsigned char hash[])
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
-  int sz = 8;
-  unsigned char buf[sz];
-  int i;
-  for (i = 0; i < sz; i++)
-    buf[i] = 0x61;
 
   SHA256_CTX sha[SHA256_DIGEST_SZ];
 
+  printf("%s%c", &b->buf[BLOCK_POS_DATA], 0x00);
+  fflush(stdout);
+
   sha256_init(sha);
-  sha256_update(sha, (unsigned char *) buf, sz);
-  //sha256_update(sha, b->buf, BLOCK_SZ-BLOCK_NB_HASH);
+  sha256_update(sha, &b->buf[BLOCK_POS_DATA], 64);
   sha256_final(sha, hash);
 
 }

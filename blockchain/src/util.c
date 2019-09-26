@@ -1,11 +1,12 @@
 #include "util.h"
 #include <stdlib.h>
+#include <stdint.h>
 
-void util_reverse_buf(unsigned char *dest, const unsigned char *src,
+void util_reverse_buf(uint8_t *dest, const uint8_t *src,
                       const int len)
 {
   int i;
-  unsigned char *temp;
+  uint8_t *temp;
 
   temp = malloc(len);
 

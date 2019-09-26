@@ -11,19 +11,20 @@
 #define CRYPTO_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #define SHA256_DIGEST_SZ 32 // SHA256 outputs a 32 byte digest
 #define SHA256_BLOCK_SZ 64  // SHA256 operates on 64 byte chunks
 
 typedef struct {
-	unsigned char data[SHA256_BLOCK_SZ];
-	unsigned int datalen;
-	unsigned long long bitlen;
-	unsigned int state[8];
+	uint8_t data[SHA256_BLOCK_SZ];
+	uint32_t datalen;
+	uint64_t bitlen;
+	uint32_t state[8];
 } SHA256_CTX;
 
 void sha256_init(SHA256_CTX *ctx);
-void sha256_update(SHA256_CTX *ctx, const unsigned char data[], size_t len);
-void sha256_final(SHA256_CTX *ctx, unsigned char hash[]);
+void sha256_update(SHA256_CTX *ctx, const uint8_t data[], size_t len);
+void sha256_final(SHA256_CTX *ctx, uint8_t hash[]);
 
 #endif

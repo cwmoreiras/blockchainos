@@ -2,6 +2,7 @@
 #define BLOCK_H
 
 #include "crypto.h"
+#include <stdint.h>
 #include <time.h>
 
 // NB prefix -> number of bytes
@@ -17,15 +18,15 @@
 #define BLOCK_POS_PREVHASH  80
 #define BLOCK_POS_HASH      112
 
-#define BLOCK_SZ            144         
+#define BLOCK_SZ            144
 
 typedef struct {
-  unsigned char buf[BLOCK_SZ];
+  uint8_t buf[BLOCK_SZ];
 } block;
 
 void block_genesis(block *);
-void block_create(const block *, block *, const unsigned char[]);
-void block_calc_hash(const block *, unsigned char[]);
+void block_create(const block *, block *, const uint8_t[]);
+void block_calc_hash(const block *, uint8_t[]);
 void block_print(const block *);
 
 #endif

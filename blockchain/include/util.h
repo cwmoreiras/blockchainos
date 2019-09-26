@@ -1,7 +1,9 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-void util_reverse_buf(unsigned char *dest, const unsigned char *src,
+#include <stdint.h>
+
+void util_reverse_buf(uint8_t *dest, const uint8_t *src,
                       const int len);
 
 #endif
