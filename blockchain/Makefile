@@ -13,7 +13,8 @@ LDLIBS += -lm -lssl -lcrypto
 
 .PHONY: all clean
 
-all: $(EXE)
+#clean every time
+all: clean $(EXE)
 
 $(EXE): $(OBJ)
 	$(CC) $(LDFLAGS) $^ $(LDLIBS) -o $@

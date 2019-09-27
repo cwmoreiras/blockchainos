@@ -8,9 +8,60 @@
 #include <unistd.h>
 #include <string.h>
 
+// private functions, access through LinkedList object
+void linkedlist_insert_front(LinkedList *ll, Node *node);
+Node *linkedlist_peek_front(LinkedList *ll);
+
+void linkedlist_init(LinkedList *ll) {
+  ll->sz = 0;
+
+  ll->head = malloc(sizeof(struct Node));
+  ll->tail = malloc(sizeof(struct Node));
+
+  // point the head and tail at eachother
+  ll->head->prev = ll->tail;
+  ll->head->next = NULL;
+  ll->tail->next = ll->head;
+  ll->tail->prev = NULL;
+
+  // assign function pointers
+  ll->insert_front = &linkedlist_insert_front;
+  ll->peek_front = &linkedlist_peek_front;
+}
+
+void linkedlist_insert_front(LinkedList *ll, Node *node) {
+  node->prev = ll->head->prev;
+  ll->head->prev->next = node;
+
+  node->next = ll->head;
+  ll->head->prev = node;
+
+  ll->sz++;
+}
+
+Node *linkedlist_peek_front(LinkedList *ll) {
+  return ll->head->prev;
+}
+
+void linkedlist_delete_front(LinkedList *ll) {
+
+}
+
+/*
+void linkedlist_insert_back(LinkedList *ll, Node *node) {
+
+
+}
+*/
+
+void linkedlist_destroy(LinkedList *ll) {
+  // will have to traverse the entire list destroying nodes as we go
+
+}
+
+
 // sets the contents of the node
-void node_init(Node *node, const void *contents, const uint64_t clen,
-               const Node *prev, const Node *next) {
+void node_init(Node *node, const void *contents, const uint64_t clen) {
   if ((node->contents = malloc((size_t)clen)) == NULL) {
     exit(1); // TODO critical failure
   }
@@ -19,10 +70,9 @@ void node_init(Node *node, const void *contents, const uint64_t clen,
   memcpy(node->contents, (void *)contents, clen);
 
   // point the prev, next pointers at the other nodes
-  node->prev=(Node *)prev;
-  node->next=(Node *)next;
+  node->prev= NULL;
+  node->next= NULL;
 }
-
 
 void node_destroy(Node *node) {
   free(node->contents);
