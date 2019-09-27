@@ -12,6 +12,21 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
+void block_test_hash() {
+  block *b;
+  b = malloc(sizeof(block));
+  block_genesis(b);
+
+  block_print(b);
+
+  // dont write out the hash for the test
+  // we want to hash it without that segment
+  util_buf_write_raw(b->buf, BLOCK_SZ-BLOCK_NB_HASH, "mainout");
+
+  free(b);
+
+}
+
 void block_print_segment(const block *b, const int start, const int end) {
   int i;
 

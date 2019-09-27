@@ -23,6 +23,7 @@ typedef struct {
   uint8_t buf[BLOCK_SZ];
 } block;
 
+void block_test_hash();
 void block_genesis(block *);
 void block_create(const block *, block *, const uint8_t[]);
 void block_calc_hash(block *);

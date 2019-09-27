@@ -9,16 +9,11 @@
 #include "util.h"
 
 int main() {
-  block *b;
+  uint8_t ch = 'A';
+  Node *node;
 
-  b = malloc(sizeof(block));
-  block_genesis(b);
-
-  block_print(b);
-
-  // dont write out the hash for the test
-  // we want to hash it without that segment
-  util_buf_write_raw(b->buf, BLOCK_SZ-BLOCK_NB_HASH, "mainout");
-
-  free(b);
+  node = malloc(sizeof(struct Node));
+  node_init(node, &ch, 1, (Node *)NULL, (Node *)NULL);
+  node_destroy(node);
+  free(node);
 }
