@@ -8,8 +8,67 @@
 #include <unistd.h>
 #include <string.h>
 
+int dynarray_insert(DynArray *da, void *element, uint64_t index);
+int dynarray_remove(DynArray *da, uint64_t index);
+int dynarray_set(DynArray *da, void *element, uint64_t index);
+int dynarray_get(DynArray *da, uint64_t index);
+int dynarray_grow(DynArray *da);
+
+void dynarray_init(DynArray *da, uint64_t cap) {
+  da->buf = malloc(cap*sizeof(void*));
+  da->insert = &dynarray_insert;
+  da->remove = &dynarray_remove;
+  da->set = &dynarray_set;
+  da->get = &dynarray_remove;
+}
+
+void dynarray_destroy(DynArray *da) {
+  free(da->buf);
+}
+
+int dynarray_grow(DynArray *da) {
+  if ((da = realloc(da, 2*sizeof(da))) == NULL) {
+    return -1; // TODO error stuff
+  }
+  return 0;
+}
+
+int dynarray_insert(DynArray *da, void *element, uint64_t index) {
+  uint64_t i;
+
+  if (index > da->sz) {
+    return -1; // TODO index out of range
+  }
+
+  da->sz++;
+  // if size == cap and grow fails, return -1
+  if ((da->sz == da->cap) && dynarray_grow(da)) {
+    return -1;
+  }
+
+  // TODO shift all elements
+
+  return 0;
+}
+
+int dynarray_remove(DynArray *da, uint64_t index) {
+
+}
+
+int dynarray_set(DynArray *da, void *element, uint64_t index) {
+  if (index > da->sz) {
+    return -1; // TODO index out of range
+  }
+
+  return 0;
+}
+
+int dynarray_get(DynArray *da, uint64_t index) {
+  
+}
+
 // private functions, access through LinkedList object
-void linkedlist_insert_front(LinkedList *ll, void *contents, uint64_t clen);
+void linkedlist_insert_front(LinkedList *ll, void *data, uint64_t dlen);
 void linkedlist_delete_front(LinkedList *ll);
 void *linkedlist_peek_front(LinkedList *ll);
 void linkedlist_destroy(LinkedList *ll);
@@ -34,9 +93,9 @@ void linkedlist_init(LinkedList *ll) {
   ll->peek_front = &linkedlist_peek_front;
 }
 
-void linkedlist_insert_front(LinkedList *ll, void *contents, uint64_t clen) {
+void linkedlist_insert_front(LinkedList *ll, void *data, uint64_t dlen) {
   Node *node = malloc(sizeof(struct Node));
-  node_init(node, contents, clen);
+  node_init(node, data, dlen);
 
   node->prev = ll->head->prev;
   ll->head->prev->next = node;
@@ -48,7 +107,7 @@ void linkedlist_insert_front(LinkedList *ll, void *contents, uint64_t clen) {
 }
 
 void *linkedlist_peek_front(LinkedList *ll) {
-  return ll->head->prev->contents;
+  return ll->head->prev->data;
 }
 
 void linkedlist_delete_front(LinkedList *ll) {
@@ -75,14 +134,14 @@ void linkedlist_destroy(LinkedList *ll) {
 
 }
 
-// sets the contents of the node
-void node_init(Node *node, const void *contents, const uint64_t clen) {
-  if ((node->contents = malloc((size_t)clen)) == NULL) {
+// sets the data of the node
+void node_init(Node *node, const void *data, const uint64_t dlen) {
+  if ((node->data = malloc((size_t)dlen)) == NULL) {
     exit(1); // TODO critical failure
   }
 
   // do a copy so that the caller can free their memory
-  memcpy(node->contents, (void *)contents, clen);
+  memcpy(node->data, (void *)data, dlen);
 
   // point the prev, next pointers at the other nodes
   node->prev= NULL;
@@ -90,8 +149,8 @@ void node_init(Node *node, const void *contents, const uint64_t clen) {
 }
 
 void node_destroy(Node *node) {
-  free(node->contents);
-  node->contents = NULL;
+  free(node->data);
+  node->data = NULL;
   node->prev = NULL;
   node->next = NULL;
 }
