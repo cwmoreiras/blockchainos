@@ -3,16 +3,19 @@
 
 #include <stdint.h>
 
+typedef struct DynamicArray DynamicArray;
 typedef struct LinkedList LinkedList;
 typedef struct Node Node;
+
 
 // linked list
 struct LinkedList {
   Node *head;
   Node *tail;
   uint64_t sz;
-  void (*insert_front)(LinkedList *ll, Node *node);
-  Node *(*peek_front)(LinkedList *ll);
+  void (*insert_front)(LinkedList *ll, void *contents, uint64_t clen);
+  void (*delete_front)(LinkedList *ll);
+  void *(*peek_front)(LinkedList *ll);
 };
 void linkedlist_init(LinkedList *ll);
 void linkedlist_destroy(LinkedList *ll);

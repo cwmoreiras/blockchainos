@@ -9,22 +9,18 @@
 #include "util.h"
 
 int main() {
-  uint8_t ch = 'A';
-  Node *node;
   LinkedList *ll;
-
-  node = malloc(sizeof(struct Node));
-  node_init(node, &ch, 1);
+  char ch = 'a';
+  char rv;
 
   ll = malloc(sizeof(struct LinkedList));
   linkedlist_init(ll);
 
-  ll->insert_front(ll, node);
-  char *res = (char*) ll->peek_front(ll)->contents;
+  ll->insert_front(ll, &ch, 1);
+  rv = *(char*)(ll->peek_front(ll));
+  printf("rv: %c\n", rv);
+  ll->delete_front(ll);
+  linkedlist_destroy(ll);
 
-  printf("%c\n", *res);
-  printf("%ld\n", ll->sz);
-
-  free(node);
   free(ll);
 }

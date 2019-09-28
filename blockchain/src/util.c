@@ -9,14 +9,18 @@
 #include <string.h>
 
 // private functions, access through LinkedList object
-void linkedlist_insert_front(LinkedList *ll, Node *node);
-Node *linkedlist_peek_front(LinkedList *ll);
+void linkedlist_insert_front(LinkedList *ll, void *contents, uint64_t clen);
+void linkedlist_delete_front(LinkedList *ll);
+void *linkedlist_peek_front(LinkedList *ll);
+void linkedlist_destroy(LinkedList *ll);
 
 void linkedlist_init(LinkedList *ll) {
   ll->sz = 0;
 
   ll->head = malloc(sizeof(struct Node));
   ll->tail = malloc(sizeof(struct Node));
+  node_init(ll->head, NULL, 0);
+  node_init(ll->tail, NULL, 0);
 
   // point the head and tail at eachother
   ll->head->prev = ll->tail;
@@ -26,10 +30,14 @@ void linkedlist_init(LinkedList *ll) {
 
   // assign function pointers
   ll->insert_front = &linkedlist_insert_front;
+  ll->delete_front = &linkedlist_delete_front;
   ll->peek_front = &linkedlist_peek_front;
 }
 
-void linkedlist_insert_front(LinkedList *ll, Node *node) {
+void linkedlist_insert_front(LinkedList *ll, void *contents, uint64_t clen) {
+  Node *node = malloc(sizeof(struct Node));
+  node_init(node, contents, clen);
+
   node->prev = ll->head->prev;
   ll->head->prev->next = node;
 
@@ -39,26 +47,33 @@ void linkedlist_insert_front(LinkedList *ll, Node *node) {
   ll->sz++;
 }
 
-Node *linkedlist_peek_front(LinkedList *ll) {
-  return ll->head->prev;
+void *linkedlist_peek_front(LinkedList *ll) {
+  return ll->head->prev->contents;
 }
 
 void linkedlist_delete_front(LinkedList *ll) {
+  // turn the front element into the head
+  ll->head->prev = ll->head->prev->prev;
 
+  node_destroy(ll->head->prev->next);
+  free(ll->head->prev->next);
+  ll->head->prev->next = ll->head;
+
+  ll->sz--;
 }
-
-/*
-void linkedlist_insert_back(LinkedList *ll, Node *node) {
-
-
-}
-*/
 
 void linkedlist_destroy(LinkedList *ll) {
-  // will have to traverse the entire list destroying nodes as we go
+  // must destroy all user data, nodes, and then head and tail
+  while (ll->sz > 0) {
+    ll->delete_front(ll);
+  }
+  node_destroy(ll->head);
+  node_destroy(ll->tail);
+
+  free(ll->head);
+  free(ll->tail);
 
 }
-
 
 // sets the contents of the node
 void node_init(Node *node, const void *contents, const uint64_t clen) {
