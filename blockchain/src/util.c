@@ -8,14 +8,14 @@
 #include <unistd.h>
 #include <string.h>
 
-int dynarray_insert(DynArray *da, void *element, uint64_t index);
-void *dynarray_remove(DynArray *da, uint64_t index, int *valid);
-int dynarray_set(DynArray *da, void *element, uint64_t index);
-void *dynarray_get(DynArray *da, uint64_t index, int *valid);
+int dynarray_insert(DynArray *da, uint8_t element, uint64_t index);
+uint8_t dynarray_remove(DynArray *da, uint64_t index, int *valid);
+int dynarray_set(DynArray *da, uint8_t element, uint64_t index);
+uint8_t dynarray_get(DynArray *da, uint64_t index, int *valid);
 int dynarray_grow(DynArray *da);
 
 void dynarray_init(DynArray *da, uint64_t cap) {
-  da->buf = malloc(cap*sizeof(void*));
+  da->buf = malloc(cap*sizeof(uint8_t));
   da->sz = 0;
   da->cap = cap;
   da->insert = &dynarray_insert;
@@ -43,7 +43,7 @@ int dynarray_grow(DynArray *da) {
   return 0;
 }
 
-int dynarray_insert(DynArray *da, void *element, uint64_t index) {
+int dynarray_insert(DynArray *da, uint8_t element, uint64_t index) {
   uint64_t i;
 
   if (index > da->sz) {
@@ -68,24 +68,24 @@ int dynarray_insert(DynArray *da, void *element, uint64_t index) {
 
 // returns a pointer to the memory that is begin removed from the list
 // valid contains the error code
-void *dynarray_remove(DynArray *da, uint64_t index, int *valid) {
+uint8_t dynarray_remove(DynArray *da, uint64_t index, int *valid) {
   uint64_t i;
-  void *ptr;
+  uint8_t element;
 
   if (index >= da->sz)
     *valid = 0;
   *valid = 1;
-  ptr = da->buf[index];
+  element = da->buf[index];
 
   for (i = index; i < da->sz-1; i++) {
     da->buf[i] = da->buf[i+1];
   }
   da->sz--;
 
-  return ptr;
+  return element;
 }
 
-int dynarray_set(DynArray *da, void *element, uint64_t index) {
+int dynarray_set(DynArray *da, uint8_t element, uint64_t index) {
   if (index > da->sz) {
     return -1; // TODO index out of range
   }
@@ -95,7 +95,7 @@ int dynarray_set(DynArray *da, void *element, uint64_t index) {
   return 0;
 }
 
-void *dynarray_get(DynArray *da, uint64_t index, int *valid) {
+uint8_t dynarray_get(DynArray *da, uint64_t index, int *valid) {
   if (index >= da->sz)
     *valid = 0;
   *valid = 1;

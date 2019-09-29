@@ -43,27 +43,27 @@ void ll_test() {
 void da_test() {
   DynArray *da;
   int valid;
-  int *rv;
-  int val1, val2, val3;
-  int i;
+  uint8_t rv;
+  uint8_t val1, val2, val3;
+  uint64_t i;
 
   da = malloc(sizeof(struct DynArray));
   dynarray_init(da, 2);
 
-  val1 = 1234;
-  da->insert(da, &val1, 0);
+  val1 = 10;
+  da->insert(da, val1, 0);
 
-  val2 = 1235;
-  da->insert(da, &val2, 1);
+  val2 = 20;
+  da->insert(da, val2, 1);
 
-  val3 = 1236;
-  da->insert(da, &val3, 2);
+  val3 = 30;
+  da->insert(da, val3, 2);
 
   da->remove(da, 1, &valid);
 
   for (i = 0; i < da->sz; i++) {
     rv = da->get(da, i, &valid);
-    printf("i:%d , val:%d\n",i, *rv);
+    printf("i:%ld , val:%d\n",i, rv);
   }
 
 
