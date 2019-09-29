@@ -8,7 +8,7 @@
 #include "block.h"
 #include "util.h"
 
-int main() {
+void ll_test() {
   LinkedList *ll;
   char ch = 'a';
   char rv;
@@ -23,4 +23,28 @@ int main() {
   linkedlist_destroy(ll);
 
   free(ll);
+}
+
+void da_test() {
+  DynArray *da;
+  int val = 5;
+  int valid;
+  int *rv;
+
+  da = malloc(sizeof(struct DynArray));
+  dynarray_init(da, 100);
+
+  da->insert(da, &val, 0);
+  rv = (int *)da->get(da, 0, &valid);
+
+  printf("%d\n", *rv);
+
+
+  dynarray_destroy(da);
+  free(da);
+}
+
+int main() {
+
+  da_test();
 }

@@ -9,21 +9,29 @@
 #include <string.h>
 
 int dynarray_insert(DynArray *da, void *element, uint64_t index);
-int dynarray_remove(DynArray *da, uint64_t index);
+void *dynarray_remove(DynArray *da, uint64_t index, int *valid);
 int dynarray_set(DynArray *da, void *element, uint64_t index);
-int dynarray_get(DynArray *da, uint64_t index);
+void *dynarray_get(DynArray *da, uint64_t index, int *valid);
 int dynarray_grow(DynArray *da);
 
 void dynarray_init(DynArray *da, uint64_t cap) {
   da->buf = malloc(cap*sizeof(void*));
+  da->sz = 0;
+  da->cap = cap;
   da->insert = &dynarray_insert;
   da->remove = &dynarray_remove;
   da->set = &dynarray_set;
-  da->get = &dynarray_remove;
+  da->get = &dynarray_get;
 }
 
 void dynarray_destroy(DynArray *da) {
   free(da->buf);
+  da->sz = 0;
+  da->cap = 0;
+  da->insert = NULL;
+  da->remove = NULL;
+  da->set = NULL;
+  da->get = NULL;
 }
 
 int dynarray_grow(DynArray *da) {
@@ -47,12 +55,28 @@ int dynarray_insert(DynArray *da, void *element, uint64_t index) {
   }
 
   // TODO shift all elements
+  for (i = da->sz-1; i > index; i--)
+    da->buf[i] = da->buf[i-1];
+
+  da->buf[index] = element;
 
   return 0;
 }
 
-int dynarray_remove(DynArray *da, uint64_t index) {
+void *dynarray_remove(DynArray *da, uint64_t index, int *valid) {
+  uint64_t i;
+  void *ptr;
 
+  if (index >= da->sz)
+    *valid = 1;
+  *valid = 0;
+  ptr = da->buf[index];
+
+  for (i = index; i < da->sz-1; i++)
+    da->buf[i] = da->buf[i+1];
+  da->sz--;
+
+  return ptr;
 }
 
 int dynarray_set(DynArray *da, void *element, uint64_t index) {
@@ -60,11 +84,17 @@ int dynarray_set(DynArray *da, void *element, uint64_t index) {
     return -1; // TODO index out of range
   }
 
+  da->buf[index] = element;
+
   return 0;
 }
 
-int dynarray_get(DynArray *da, uint64_t index) {
-  
+void *dynarray_get(DynArray *da, uint64_t index, int *valid) {
+  if (index >= da->sz)
+    *valid = 1;
+  *valid = 0;
+
+  return da->buf[index];
 }
 
 // private functions, access through LinkedList object
@@ -131,6 +161,13 @@ void linkedlist_destroy(LinkedList *ll) {
 
   free(ll->head);
   free(ll->tail);
+
+  ll->head = NULL;
+  ll->tail = NULL;
+
+  ll->insert_front = NULL;
+  ll->delete_front = NULL;
+  ll->peek_front = NULL;
 
 }
 

@@ -8,13 +8,13 @@ typedef struct LinkedList LinkedList;
 typedef struct Node Node;
 
 struct DynArray {
-  void *buf;
+  void **buf;
   uint64_t sz;
   uint64_t cap;
   int (*insert)(DynArray *da, void *element, uint64_t index);
-  int (*remove)(DynArray *da, uint64_t index);
+  void *(*remove)(DynArray *da, uint64_t index, int *valid);
   int (*set)(DynArray *da, void *element, uint64_t index);
-  int (*get)(DynArray *da, uint64_t index);
+  void *(*get)(DynArray *da, uint64_t index, int *valid);
 };
 void dynarray_init(DynArray *da, uint64_t cap);
 void dynarray_destroy(DynArray *da);
