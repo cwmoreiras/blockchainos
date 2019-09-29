@@ -35,9 +35,11 @@ void dynarray_destroy(DynArray *da) {
 }
 
 int dynarray_grow(DynArray *da) {
-  if ((da = realloc(da, 2*sizeof(da))) == NULL) {
+  da->cap *= 2;
+  if ((da->buf = realloc(da->buf, da->cap*sizeof(void*))) == NULL) {
     return -1; // TODO error stuff
   }
+
   return 0;
 }
 
@@ -48,32 +50,36 @@ int dynarray_insert(DynArray *da, void *element, uint64_t index) {
     return -1; // TODO index out of range
   }
 
-  da->sz++;
   // if size == cap and grow fails, return -1
   if ((da->sz == da->cap) && dynarray_grow(da)) {
     return -1;
   }
 
-  // TODO shift all elements
-  for (i = da->sz-1; i > index; i--)
+  // TODO shift all elements right
+  for (i = da->sz; i > index; i--) {
     da->buf[i] = da->buf[i-1];
+  }
 
   da->buf[index] = element;
+  da->sz++;
 
   return 0;
 }
 
+// returns a pointer to the memory that is begin removed from the list
+// valid contains the error code
 void *dynarray_remove(DynArray *da, uint64_t index, int *valid) {
   uint64_t i;
   void *ptr;
 
   if (index >= da->sz)
-    *valid = 1;
-  *valid = 0;
+    *valid = 0;
+  *valid = 1;
   ptr = da->buf[index];
 
-  for (i = index; i < da->sz-1; i++)
+  for (i = index; i < da->sz-1; i++) {
     da->buf[i] = da->buf[i+1];
+  }
   da->sz--;
 
   return ptr;
@@ -91,8 +97,8 @@ int dynarray_set(DynArray *da, void *element, uint64_t index) {
 
 void *dynarray_get(DynArray *da, uint64_t index, int *valid) {
   if (index >= da->sz)
-    *valid = 1;
-  *valid = 0;
+    *valid = 0;
+  *valid = 1;
 
   return da->buf[index];
 }
