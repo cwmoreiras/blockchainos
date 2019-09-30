@@ -8,6 +8,12 @@
 #include "block.h"
 #include "util.h"
 
+
+#include <openssl/evp.h>
+#include <openssl/ssl.h>
+#include <openssl/rsa.h>
+#include <openssl/x509.h>
+
 void ll_test() {
   LinkedList *ll;
   char ch = 'a';
@@ -25,21 +31,6 @@ void ll_test() {
   free(ll);
 }
 
-// TODO: dynarray users have to be careful with memory allocation
-// dynarray doesn't make local copies of elements.
-// this makes it dangerous for the caller, because if they assign the same
-// address to multiple array elements on accident, multiple dynarray elements
-// will be updated when the data in that location is changed.
-// This can happen, for example, if the caller sets an element to point at
-// an address local to them, then changes the value at the local address, then
-// assigns that address to a different element. In that example, both elements
-// will be changed, which is probably undesirable.
-//
-// callers are discouraged from assigning dynarray elements to point at any
-// stack allocated memory
-//
-// callers should also make sure they are assigning each element to a distinct
-// address
 void da_test() {
   DynArray *da;
   int valid;
@@ -72,7 +63,12 @@ void da_test() {
   free(da);
 }
 
-int main() {
+void block_test() {
 
+}
+
+int main() {
   da_test();
+  ll_test();
+  printf("%d\n", SHA256_DIGEST_LENGTH);
 }

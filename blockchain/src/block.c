@@ -12,6 +12,52 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
+/*
+void block_calc_hash(block *b)
+// -----------------------------------------------------------------------------
+// func: calculate the hash of the passed block
+// args: b - the block for which a hash is desired
+//       hash - the block hash
+// retn: none
+// auth: cwmoreiras
+// -----------------------------------------------------------------------------
+{
+  uint8_t hash[BLOCK_NB_HASH];
+  SHA256_CTX sha[SHA256_DIGEST_LENGTH];
+
+  SHA256_Init(sha);
+
+  // hash the whole block except the part that contains where the hash going
+  // to go
+  SHA256_Update(sha, b->buf, BLOCK_SZ-BLOCK_NB_HASH);
+  SHA256_Final(hash, sha);
+
+  // copy the hash into the block
+  memcpy(&b->buf[BLOCK_POS_HASH], hash, BLOCK_NB_HASH);
+}
+*/
+
+void block_genesis(block *b)
+// -----------------------------------------------------------------------------
+// func: generate the initial block for the chain
+// args: b - a storage container for the block data
+// retn: none
+// auth: cwmoreiras
+// -----------------------------------------------------------------------------
+{
+  uint8_t *msg = (uint8_t *) "today is september 29th, 2019 and we had spaghetti for dinner";
+  uint64_t msglen = strlen
+
+  memset(b->prev_hash, 0, SHA256_DIGEST_LENGTH);
+  b->index = 0;
+  b->timestamp = time(NULL);
+
+
+
+//  block_calc_hash(b); // hash this block, and store the hash
+}
+
+/*
 void block_test_hash() {
   block *b;
   b = malloc(sizeof(block));
@@ -56,26 +102,7 @@ void block_print(const block *b)
   block_print_segment(b, BLOCK_POS_HASH, BLOCK_SZ);
 }
 
-void block_genesis(block *b)
-// -----------------------------------------------------------------------------
-// func: generate the initial block for the chain
-// args: b - a storage container for the block data
-// retn: none
-// auth: cwmoreiras
-// -----------------------------------------------------------------------------
-{
-  uint8_t *msg = (uint8_t *)"hello world. this is a message that can change but that i ";
-  size_t msg_sz = strlen((char*)msg)+1; // include the null
-  time_t ts = time(NULL); // get timestamp
 
-  memset(b->buf, 0, BLOCK_SZ); // initialize the block to all zeroes
-  memcpy(&b->buf[BLOCK_POS_TIMESTAMP], &ts, BLOCK_NB_TIMESTAMP); // fill ts
-  memcpy(&b->buf[BLOCK_POS_DATA], msg, msg_sz); // fill the data
-
-  block_calc_hash(b); // hash this block, and store the hash
-}
-
-/*
 void block_create(const block *old_block, block *new_block,
                   const uint8_t data[])
 // -----------------------------------------------------------------------------
@@ -90,26 +117,3 @@ void block_create(const block *old_block, block *new_block,
 
 }
 */
-
-void block_calc_hash(block *b)
-// -----------------------------------------------------------------------------
-// func: calculate the hash of the passed block
-// args: b - the block for which a hash is desired
-//       hash - the block hash
-// retn: none
-// auth: cwmoreiras
-// -----------------------------------------------------------------------------
-{
-  uint8_t hash[BLOCK_NB_HASH];
-  SHA256_CTX sha[SHA256_DIGEST_LENGTH];
-
-  SHA256_Init(sha);
-
-  // hash the whole block except the part that contains where the hash going
-  // to go
-  SHA256_Update(sha, b->buf, BLOCK_SZ-BLOCK_NB_HASH);
-  SHA256_Final(hash, sha);
-
-  // copy the hash into the block
-  memcpy(&b->buf[BLOCK_POS_HASH], hash, BLOCK_NB_HASH);
-}
