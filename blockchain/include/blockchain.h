@@ -10,25 +10,26 @@
 #include <openssl/x509.h>
 
 // subclass of Node, inherites prev, next, data
-typedef struct {
-  Node node;
+typedef struct Block Block;
+struct Block{
+  Node *node;
   uint8_t prevh[SHA256_DIGEST_LENGTH]; // previous blocks hash
-  uint64_t index;
   uint64_t timestamp;
+  uint64_t index;
   uint8_t thish[SHA256_DIGEST_LENGTH]; // this blocks hash
+};
 
-} Block;
-void block_init(Block *this, void *data, uint64_t sz);
-void block_destroy(Block *this);
 
-typedef struct {
-  LinkedList ll;
-  //void (*genesis)(Blockchain *this);
-  //void (*append)(Blockchain *this, void *data, uint64_t sz);
-  //void (*verify_block)(Blockchain *this);
-  //void (*verify_chain)(Blockchain *this);
-} Blockchain;
-void blockchain_init(Blockchain *this);
-void blockchain_destroy(Blockchain *this);
+typedef struct Blockchain Blockchain;
+struct Blockchain {
+  LinkedList *ll;
+  uint64_t index;
+  void (*append)(Blockchain *this, void *data, uint64_t sz, uint8_t *prevh);
+  Block *(*prev)(Blockchain *this);
+};
+void blockchain_init(Blockchain *blockchain);
+void blockchain_destroy(Blockchain *blockchain);
+
+
 
 #endif

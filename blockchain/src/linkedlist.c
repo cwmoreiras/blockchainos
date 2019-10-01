@@ -9,9 +9,9 @@ void linkedlist_delete_front(LinkedList *this);
 void *linkedlist_peek_front(LinkedList *this);
 void linkedlist_destroy(LinkedList *this);
 
+
 void linkedlist_init(LinkedList *this) {
   this->sz = 0;
-
   this->head = malloc(sizeof(struct Node));
   this->tail = malloc(sizeof(struct Node));
   node_init(this->head, NULL, 0);
@@ -74,5 +74,4 @@ void linkedlist_destroy(LinkedList *this) {
   this->insert_front = NULL;
   this->delete_front = NULL;
   this->peek_front = NULL;
-
 }

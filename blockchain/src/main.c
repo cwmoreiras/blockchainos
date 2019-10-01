@@ -17,20 +17,30 @@
 #include <openssl/x509.h>
 
 void ll_test() {
-  LinkedList *ll;
-  char ch = 'a';
-  char rv;
+  LinkedList chain;
 
-  ll = malloc(sizeof(struct LinkedList));
-  linkedlist_init(ll);
+  char *s;
+  char *msg0 = "my first block will be this message";
+  size_t msg0_sz = strlen(msg0)+1;
 
-  ll->insert_front(ll, &ch, 1);
-  rv = *(char*)(ll->peek_front(ll));
-  printf("rv: %c\n", rv);
-  ll->delete_front(ll);
-  linkedlist_destroy(ll);
+  char *msg1 = "my second block will be this message";
+  size_t msg1_sz = strlen(msg1)+1;
 
-  free(ll);
+  linkedlist_init(&chain);
+
+  chain.insert_front(&chain, msg0, msg0_sz);
+  s = (char *)chain.peek_front(&chain);
+  printf("%s\n", s);
+
+  chain.insert_front(&chain, msg1, msg1_sz);
+  s = (char *)chain.peek_front(&chain);
+  printf("%s\n", s);
+
+  chain.delete_front(&chain);
+  s = (char *)chain.peek_front(&chain);
+  printf("%s\n", s);
+
+  linkedlist_destroy(&chain);
 }
 
 void da_test() {
@@ -68,20 +78,14 @@ void da_test() {
 // should i encapsulate node in linkedlist?
 
 int main() {
-  LinkedList *chain;
+  Blockchain bc;
+  char *str = "this is the second block";
+  uint64_t str_sz = strlen(str)+1;
 
-  char *msg = "my first block will be this message";
-  size_t msg_sz = strlen(msg)+1;
+  blockchain_init(&bc);
+  printf("%s\n", (char *)bc.ll->peek_front(bc.ll));
 
-  chain = malloc(sizeof(struct LinkedList));
+  blockchain_destroy(&bc);
 
-  linkedlist_init(chain);
-
-  chain->insert_front(chain, msg, msg_sz);
-  char *s = (char *)chain->peek_front(chain);
-  printf("%s\n", s);
-
-  linkedlist_destroy(chain);
-  free(chain);
 
 }
