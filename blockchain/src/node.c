@@ -3,22 +3,22 @@
 #include <stdlib.h>
 #include <string.h>
 
-void node_init(Node *node, const void *data, const uint64_t sz) {
-  if ((node->data = malloc((size_t)sz)) == NULL) {
+void node_init(Node *this, const void *data, const uint64_t sz) {
+  if ((this->data = malloc((size_t)sz)) == NULL) {
     exit(1); // TODO critical failure
   }
 
   // do a copy so that the caller can free their memory
-  memcpy(node->data, (void *)data, sz);
+  memcpy(this->data, (void *)data, sz);
 
   // point the prev, next pointers at the other nodes
-  node->prev= NULL;
-  node->next= NULL;
+  this->prev= NULL;
+  this->next= NULL;
 }
 
-void node_destroy(Node *node) {
-  free(node->data);
-  node->data = NULL;
-  node->prev = NULL;
-  node->next = NULL;
+void node_destroy(Node *this) {
+  free(this->data);
+  this->data = NULL;
+  this->prev = NULL;
+  this->next = NULL;
 }

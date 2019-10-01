@@ -10,11 +10,11 @@ struct LinkedList {
   Node *head;
   Node *tail;
   uint64_t sz;
-  void (*insert_front)(LinkedList *ll, void *data, uint64_t sz);
-  void (*delete_front)(LinkedList *ll);
-  void *(*peek_front)(LinkedList *ll);
+  void (*insert_front)(LinkedList *this, void *data, uint64_t sz);
+  void (*delete_front)(LinkedList *this);
+  void *(*peek_front)(LinkedList *this);
 };
-void linkedlist_init(LinkedList *ll);
-void linkedlist_destroy(LinkedList *ll);
+void linkedlist_init(LinkedList *this);
+void linkedlist_destroy(LinkedList *this);
 
 #endif

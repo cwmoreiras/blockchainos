@@ -5,7 +5,7 @@
 #include <stdint.h>
 
 #include "main.h"
-#include "block.h"
+#include "blockchain.h"
 #include "util.h"
 #include "linkedlist.h"
 #include "dynarray.h"

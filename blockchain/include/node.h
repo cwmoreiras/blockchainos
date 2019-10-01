@@ -12,7 +12,7 @@ struct Node {
   struct Node *next; // optional - use for linked list
 };
 
-void node_init(Node *node, const void *data, const uint64_t sz);
-void node_destroy(Node *node);
+void node_init(Node *this, const void *data, const uint64_t sz);
+void node_destroy(Node *this);
 
 #endif
