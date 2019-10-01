@@ -7,6 +7,8 @@
 #include "main.h"
 #include "block.h"
 #include "util.h"
+#include "linkedlist.h"
+#include "dynarray.h"
 
 
 #include <openssl/evp.h>
@@ -63,12 +65,23 @@ void da_test() {
   free(da);
 }
 
-void block_test() {
-
-}
+// should i encapsulate node in linkedlist?
 
 int main() {
-  da_test();
-  ll_test();
-  printf("%d\n", SHA256_DIGEST_LENGTH);
+  LinkedList *chain;
+
+  char *msg = "my first block will be this message";
+  size_t msg_sz = strlen(msg)+1;
+
+  chain = malloc(sizeof(struct LinkedList));
+
+  linkedlist_init(chain);
+
+  chain->insert_front(chain, msg, msg_sz);
+  char *s = (char *)chain->peek_front(chain);
+  printf("%s\n", s);
+
+  linkedlist_destroy(chain);
+  free(chain);
+
 }

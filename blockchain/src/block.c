@@ -35,7 +35,7 @@ void block_calc_hash(block *b)
   // copy the hash into the block
   memcpy(&b->buf[BLOCK_POS_HASH], hash, BLOCK_NB_HASH);
 }
-*/
+
 
 void block_genesis(block *b)
 // -----------------------------------------------------------------------------
@@ -45,8 +45,8 @@ void block_genesis(block *b)
 // auth: cwmoreiras
 // -----------------------------------------------------------------------------
 {
-  uint8_t *msg = (uint8_t *) "today is september 29th, 2019 and we had spaghetti for dinner";
-  uint64_t msglen = strlen
+  //uint8_t *msg = (uint8_t *) "today is september 29th, 2019 and we had spaghetti for dinner";
+  //uint64_t msglen = strlen
 
   memset(b->prev_hash, 0, SHA256_DIGEST_LENGTH);
   b->index = 0;
@@ -57,7 +57,7 @@ void block_genesis(block *b)
 //  block_calc_hash(b); // hash this block, and store the hash
 }
 
-/*
+
 void block_test_hash() {
   block *b;
   b = malloc(sizeof(block));
