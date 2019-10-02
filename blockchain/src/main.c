@@ -78,14 +78,14 @@ void da_test() {
 // should i encapsulate node in linkedlist?
 
 int main() {
-  Blockchain bc;
-  char *str = "this is the second block";
-  uint64_t str_sz = strlen(str)+1;
+  uint8_t *record = (uint8_t *) "this is the second block";
+  uint64_t record_sz = strlen((char *)record)+1;
 
+  Blockchain bc;
   blockchain_init(&bc);
-  printf("%s\n", (char *)bc.ll->peek_front(bc.ll));
+  uint8_t *ret = (uint8_t *) bc.peek_front(&bc);
+  bc.append(&bc, record, record_sz);
+  ret = (uint8_t *) bc.peek_front(&bc);
 
   blockchain_destroy(&bc);
-
-
 }

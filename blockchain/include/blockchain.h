@@ -9,24 +9,26 @@
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
-// subclass of Node, inherites prev, next, data
+#define BLOCK_HEADER_SZ 88
+
+#define PREVHASH_POS    0
+#define CURRHASH_POS    32
+#define INDEX_POS       64
+#define TS_POS          72
+#define RECORD_SZ_POS   80
+#define RECORD_POS      88
+
 typedef struct Block Block;
-struct Block{
-  Node *node;
-  uint8_t prevh[SHA256_DIGEST_LENGTH]; // previous blocks hash
+struct Block {
+  uint8_t prevhash[SHA256_DIGEST_LENGTH];
+  uint64_t index;
   uint64_t timestamp;
-  uint64_t index;
-  uint8_t thish[SHA256_DIGEST_LENGTH]; // this blocks hash
+  uint64_t record_sz;
+  uint8_t *record;
+  uint8_t hash[SHA256_DIGEST_LENGTH];
 };
 
-
-typedef struct Blockchain Blockchain;
-struct Blockchain {
-  LinkedList *ll;
-  uint64_t index;
-  void (*append)(Blockchain *this, void *data, uint64_t sz, uint8_t *prevh);
-  Block *(*prev)(Blockchain *this);
-};
+typedef struct LinkedList Blockchain; // blockchain is a linked list
 void blockchain_init(Blockchain *blockchain);
 void blockchain_destroy(Blockchain *blockchain);
 
