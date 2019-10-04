@@ -16,7 +16,8 @@ void blockchain_append(Blockchain *this,
 void blockframe_decode(uint8_t *this,
                        uint8_t *prevhash, uint8_t *hash,
                        uint64_t *index, uint64_t *timestamp,
-                       uint64_t *record_sz, uint8_t *record) {
+                       uint64_t *record_sz, uint8_t *record)
+{
 
   memcpy(prevhash, &this[PREVHASH_POS], HASH_SZ);
   memcpy(hash, &this[CURRHASH_POS], HASH_SZ);
@@ -27,7 +28,8 @@ void blockframe_decode(uint8_t *this,
 }
 
 // frames a block (stores all members in a buffer with no padding)
-void block_frame(Block *this, uint8_t *buf) {
+void block_frame(Block *this, uint8_t *buf)
+{
   memcpy(&buf[PREVHASH_POS], this->prevhash, HASH_SZ);
   memcpy(&buf[CURRHASH_POS], this->hash, HASH_SZ);
   memcpy(&buf[INDEX_POS], &this->index, WORD_SZ);
@@ -36,7 +38,8 @@ void block_frame(Block *this, uint8_t *buf) {
   memcpy(&buf[RECORD_POS], this->record, this->record_sz);
 }
 
-void block_hash(Block *this, uint8_t *hash) {
+void block_hash(Block *this, uint8_t *hash)
+{
   uint8_t *buf[BLOCK_HEADER_SZ + this->record_sz];
 
   memcpy(&buf[PREVHASH_POS], this->prevhash, HASH_SZ);
@@ -53,7 +56,8 @@ void block_hash(Block *this, uint8_t *hash) {
 
 }
 
-void blockchain_root(Blockchain *this) {
+void blockchain_root(Blockchain *this)
+{
   Block block;
   uint8_t *record = (uint8_t *)"this is the first block";
   uint64_t record_sz = strlen((char *)record)+1;
@@ -82,7 +86,8 @@ void blockchain_root(Blockchain *this) {
 
 void blockchain_append(Blockchain *this,
                        uint8_t *record,
-                       uint64_t record_sz) {
+                       uint64_t record_sz)
+{
   Block block;
   uint64_t blocksize = BLOCK_HEADER_SZ + record_sz;
   uint8_t buf[blocksize];
@@ -108,13 +113,15 @@ void blockchain_append(Blockchain *this,
 
 }
 
-void blockchain_init(Blockchain *blockchain) {
+void blockchain_init(Blockchain *blockchain)
+{
   linkedlist_init(blockchain);
   blockchain->append = &blockchain_append;
   blockchain_root(blockchain);
 
 }
 
-void blockchain_destroy(Blockchain *blockchain) {
+void blockchain_destroy(Blockchain *blockchain)
+{
   linkedlist_destroy(blockchain);
 }

@@ -2,23 +2,38 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+// private functions, access through dynarray object
 int dynarray_insert(DynArray *this, uint8_t element, uint64_t index);
 uint8_t dynarray_remove(DynArray *this, uint64_t index, int *valid);
 int dynarray_set(DynArray *this, uint8_t element, uint64_t index);
 uint8_t dynarray_get(DynArray *this, uint64_t index, int *valid);
 int dynarray_grow(DynArray *this);
 
-void dynarray_init(DynArray *this, uint64_t cap) {
+void dynarray_init(DynArray *this, uint64_t cap)
+// -----------------------------------------------------------------------------
+// Func: Initialize the dynarray object
+// Args: this - a pointer to this dynarray object
+// Retn: None
+// -----------------------------------------------------------------------------
+{
   this->buf = malloc(cap*sizeof(uint8_t));
-  this->sz = 0;
-  this->cap = cap;
+  this->sz = 0; // current size
+  this->cap = cap; // current capacity
+
+  // set all function pointers
   this->insert = &dynarray_insert;
   this->remove = &dynarray_remove;
   this->set = &dynarray_set;
   this->get = &dynarray_get;
 }
 
-void dynarray_destroy(DynArray *this) {
+void dynarray_destroy(DynArray *this)
+// -----------------------------------------------------------------------------
+// Func: Destroy the dynarray object by freeing the buffer memory
+// Args: this - a pointer to this dynarray object
+// Retn: None
+// -----------------------------------------------------------------------------
+{
   free(this->buf);
   this->sz = 0;
   this->cap = 0;
@@ -28,8 +43,14 @@ void dynarray_destroy(DynArray *this) {
   this->get = NULL;
 }
 
-int dynarray_grow(DynArray *this) {
-  this->cap *= 2;
+int dynarray_grow(DynArray *this)
+// -----------------------------------------------------------------------------
+// Func: Double the size of the dynarray buffer
+// Args: this - a pointer to this dynarray object
+// Retn: error code
+// -----------------------------------------------------------------------------
+{
+  this->cap *= 2; // double the size of the buffer for amortized cost
   if ((this->buf = realloc(this->buf, this->cap*sizeof(void*))) == NULL) {
     return -1; // TODO error stuff
   }
@@ -37,7 +58,16 @@ int dynarray_grow(DynArray *this) {
   return 0;
 }
 
-int dynarray_insert(DynArray *this, uint8_t element, uint64_t index) {
+// TODO - do we really want the dynarray to operate on bytes?
+//        consider a larger unit, or MAYBE void pointers
+int dynarray_insert(DynArray *this, uint8_t element, uint64_t index)
+// -----------------------------------------------------------------------------
+// Func: Insert an element into an arbitrary location
+// Args: this - a pointer to this dynarray object
+//       element - the byte being inserted
+// Retn: error code
+// -----------------------------------------------------------------------------
+{
   uint64_t i;
 
   if (index > this->sz) {
@@ -60,12 +90,26 @@ int dynarray_insert(DynArray *this, uint8_t element, uint64_t index) {
   return 0;
 }
 
+// TODO - return an error code, and fill a buffer with a copy of the memory that
+//        is being removed, instead of what's happening now, which is
+//        the opposite
 // returns a pointer to the memory that is begin removed from the list
 // valid contains the error code
-uint8_t dynarray_remove(DynArray *this, uint64_t index, int *valid) {
+uint8_t dynarray_remove(DynArray *this, uint64_t index, int *valid)
+// -----------------------------------------------------------------------------
+// Func: Remove an element from an arbitrary location
+// Args: this - a pointer to this dynarray object
+//       element - the index of the element to be deleted
+//       valid - when the function returns, will be set to 1 if a valid index
+//               was given, 0 otherwise. the caller should check this value to
+//               see if their data was valid.
+// Retn: the element being removed
+// -----------------------------------------------------------------------------
+{
   uint64_t i;
   uint8_t element;
 
+  // TODO - don't like how this is happening
   if (index >= this->sz)
     *valid = 0;
   *valid = 1;
@@ -79,7 +123,15 @@ uint8_t dynarray_remove(DynArray *this, uint64_t index, int *valid) {
   return element;
 }
 
-int dynarray_set(DynArray *this, uint8_t element, uint64_t index) {
+int dynarray_set(DynArray *this, uint8_t element, uint64_t index)
+// -----------------------------------------------------------------------------
+// Func: Set the value of an element that currently exists in the list
+// Args: this - a pointer to this dynarray object
+//       element - the new value
+//       index - the index being updated
+// Retn: error code
+// -----------------------------------------------------------------------------
+{
   if (index > this->sz) {
     return -1; // TODO index out of range
   }
@@ -89,7 +141,18 @@ int dynarray_set(DynArray *this, uint8_t element, uint64_t index) {
   return 0;
 }
 
-uint8_t dynarray_get(DynArray *this, uint64_t index, int *valid) {
+// TODO - return an error code, and fill a buffer with a copy of the memory that
+//        is being removed, instead of what's happening now, which is
+//        the opposite
+uint8_t dynarray_get(DynArray *this, uint64_t index, int *valid)
+// -----------------------------------------------------------------------------
+// Func: Retrieve a pointer to the element at the given index
+// Args: this - a pointer to this dynarray object
+//       index - the index of the element to return
+//       valid - 1 if the index is in range, else 0
+// Retn: a pointer to the requested element
+// -----------------------------------------------------------------------------
+{
   if (index >= this->sz)
     *valid = 0;
   *valid = 1;
