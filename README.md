@@ -3,11 +3,11 @@
 ## DIRECTORIES:
 
 blockchain - source code for the blockchain
-blockchain/include
-blockchain/lib
-blockchain/obj
-blockchain/src
-Makefile
+* blockchain/include
+* blockchain/lib
+* blockchain/obj
+* blockchain/src
+* Makefile
 
 node - client code
 
