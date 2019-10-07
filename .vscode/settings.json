@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "blockchain.h": "c",
+        "string.h": "c",
+        "dynarray.h": "c"
+    }
+}

@@ -1,6 +1,6 @@
 # blockchainos
 
-## DIRECTORIES:
+## directories:
 
 blockchain - source code for the blockchain
 * blockchain/include
@@ -16,3 +16,4 @@ node - client code
 * https://github.com/B-Con/crypto-algorithms/blob/master/sha256.h
 * https://github.com/B-Con/crypto-algorithms/blob/master/sha256.c
 * http://www.iwar.org.uk/comsec/resources/cipher/sha256-384-512.pdf
+* https://bitcoin.org/bitcoin.pdf

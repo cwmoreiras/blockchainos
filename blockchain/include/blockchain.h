@@ -1,3 +1,23 @@
+/*
+blockchain.h: structure definition for block & blockchain
+Copyright (C) 2019 
+maintainer: Carlos WM
+email: cwmoreiras@gmail.com
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
 #ifndef BLOCK_H
 #define BLOCK_H
 
@@ -23,7 +43,16 @@
 #define RECORD_POS      88
 
 typedef struct Block Block;
-struct Block {
+struct Block 
+// -----------------------------------------------------------------------------
+// Description
+//  Definition of Block, an implementation of a blockchain block. This class can
+//  be used to store the data necessary for creation of a block, but an instance 
+//  of this struct is not designed to be stored in the chain directly. Objects
+//  of this type should be used to construct BlockFrames, which have no zero
+//  padding, and can be stored in the chain.
+// -----------------------------------------------------------------------------
+{
   uint8_t prevhash[HASH_SZ];
   uint8_t hash[HASH_SZ];
   uint64_t index;
@@ -39,8 +68,10 @@ void blockframe_decode(uint8_t *this,
                        uint64_t *record_sz, uint8_t *record);
 
 typedef struct LinkedList Blockchain; // blockchain is a linked list
-void blockchain_init(Blockchain *blockchain);
-void blockchain_destroy(Blockchain *blockchain);
+
+// public methods
+void blockchain_init(Blockchain *blockchain); // blockchain contructor
+void blockchain_destroy(Blockchain *blockchain); // blockchain destructor
 
 
 
