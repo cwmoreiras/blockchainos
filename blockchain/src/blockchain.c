@@ -32,22 +32,53 @@ void blockchain_root(Blockchain *this);
 void blockchain_append(Blockchain *this,
                        uint8_t *record,
                        uint64_t record_sz);
+void blockframe_print(uint8_t *this);
 
-void blockframe_decode(uint8_t *this,
-                       uint8_t *prevhash, uint8_t *hash,
-                       uint64_t *index, uint64_t *timestamp,
-                       uint64_t *record_sz, uint8_t *record)
+void blockframe_print(uint8_t *this) 
 // -----------------------------------------------------------------------------
 // Func: 
 // Args:
 // Retn:
 // -----------------------------------------------------------------------------
 {
+  uint8_t prevhash[1000], hash[1000];
+  uint64_t index, timestamp, record_sz;
+  uint8_t record[1000];
 
+  blockframe_decode(this, prevhash, hash,
+    &index, &timestamp, &record_sz, record);
+
+  
+
+  // printf("prevhash %s\n", prevhash);
+  // printf("hash %s\n", hash);
+  printf("index: %lu\n", index);
+  printf("tstmp: %lu\n", timestamp);
+  printf("recsz: %lu\n", record_sz);
+  // printf("%s\n", record);
+}
+
+void blockframe_decode(uint8_t *this,
+                       uint8_t *prevhash, uint8_t *hash,
+                       uint64_t *index, uint64_t *timestamp,
+                       uint64_t *record_sz, uint8_t *record)
+// -----------------------------------------------------------------------------
+// Func: Inverse of block_frame function. Takes a block frame and extracts its 
+//       contents to facilitate certain processing needs
+// Args: this - a pointer to the block frame
+//       prevhash - pointer to the previous hash
+//       hash - a pointer to this block's hash
+//       index - pointer to the index of this block
+//       timestamp - pointer to this block's original timestamp
+//       record_sz - pointer to the size of this block's record
+//       record - points to the first element of the record
+// Retn:
+// -----------------------------------------------------------------------------
+{
   memcpy(prevhash, &this[PREVHASH_POS], HASH_SZ);
   memcpy(hash, &this[CURRHASH_POS], HASH_SZ);
-  index = (uint64_t *)&this[INDEX_POS];
-  timestamp = (uint64_t *)&this[TS_POS];
+  *index = *(uint64_t *)&this[INDEX_POS];
+  *timestamp = *(uint64_t *)&this[TS_POS];
   memcpy(record_sz, &this[RECORD_SZ_POS], WORD_SZ);
   memcpy(record, &this[RECORD_POS], *record_sz);
 }
@@ -77,7 +108,7 @@ void block_hash(Block *this, uint8_t *hash)
 // Retn: None
 // -----------------------------------------------------------------------------
 {
-  uint8_t *buf[BLOCK_HEADER_SZ + this->record_sz]; // record size is variable
+  uint8_t buf[BLOCK_HEADER_SZ + this->record_sz]; // record size is variable
 
   block_frame(this, buf);
 

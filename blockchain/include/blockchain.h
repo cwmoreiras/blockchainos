@@ -61,11 +61,12 @@ struct Block
   uint8_t *record;
 };
 
-// TODO encapsulate this function?
+// TODO encapsulate these functions?
 void blockframe_decode(uint8_t *this,
                        uint8_t *prevhash, uint8_t *hash,
                        uint64_t *index, uint64_t *timestamp,
                        uint64_t *record_sz, uint8_t *record);
+void blockframe_print(uint8_t *this) ;
 
 typedef struct LinkedList Blockchain; // blockchain is a linked list
 

@@ -28,7 +28,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <string.h>
 
+char *util_hash_string();
+
 int util_print_license(void) 
+// -----------------------------------------------------------------------------
+// Func: 
+// Args:
+// Retn:
+// -----------------------------------------------------------------------------
 {
   printf("%s\nCopyright (C) %s\nmaintainer: %s\n", 
     PROG_NAME, COPYRIGHT_YEAR, MAINTAINER);
@@ -36,6 +43,8 @@ int util_print_license(void)
   printf("for details type 'show w'\n");
   printf("This is free software, and you are welcome to redisribute it\n");
   printf("under certain conditions; type 'show c' for details\n");
+
+  return 0; // todo error codes
 }
 
 int util_buf_write_raw(const uint8_t *buf, int n, const char *pathname) 

@@ -103,8 +103,6 @@ int main() {
   util_print_license();
 
   uint8_t *blockframe;
-  uint8_t msg[1000];
-  uint64_t msglen;
 
   uint8_t *record = (uint8_t *) "this is the second block";
   uint64_t record_sz = strlen((char *)record)+1;
@@ -113,14 +111,11 @@ int main() {
 
   blockchain_init(&bc);
   blockframe = (uint8_t *) bc.peek_front(&bc); // returns a framed block
-  blockframe_decode(blockframe, &msglen, msg);
-  printf("%s\n", msg);
+  blockframe_print(blockframe);
 
   bc.append(&bc, record, record_sz);
   blockframe = (uint8_t *) bc.peek_front(&bc); // returns a framed block
-  blockframe_decode(blockframe, &msglen, msg);
-  printf("%s\n", msg);
-
+  blockframe_print(blockframe);
 
   blockchain_destroy(&bc);
 }
