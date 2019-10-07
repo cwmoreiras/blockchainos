@@ -28,7 +28,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <string.h>
 
-char *util_hash_string();
+void util_buf_hash(uint8_t *buf, uint64_t buf_sz, uint8_t *hash) 
+// -----------------------------------------------------------------------------
+// Func: Hash any
+// Args:
+// Retn:
+// -----------------------------------------------------------------------------
+{
+  SHA256_CTX sha;
+  SHA256_Init(&sha);
+  SHA256_Update(&sha, buf, buf_sz);
+  SHA256_Final(hash, &sha);
+}
+
+// -----------------------------------------------------------------------------
+// Func: Hash the the block after removing struct 0 padding
+// Args: this - a pointer to the block
+//       hash - a pointer to the hash of the block
+// Retn: None
+// -----------------------------------------------------------------------------
+{
+  uint8_t buf[BLOCK_HEADER_SZ + this->record_sz]; // record size is variable
+
+  block_frame(this, buf);
+
+  SHA256_CTX sha;
+  SHA256_Init(&sha);
+  SHA256_Update(&sha, buf, BLOCK_HEADER_SZ + this->record_sz);
+  SHA256_Final(hash, &sha);
+
+}
 
 int util_print_license(void) 
 // -----------------------------------------------------------------------------
