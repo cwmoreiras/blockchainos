@@ -35,6 +35,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define MAINTAINER "Carlos WM"
 
 // buffer utilities
+void util_buf_hash(uint8_t *buf, uint64_t buf_sz, uint8_t *hash);
 void util_buf_reverse(uint8_t *dest, const uint8_t *src,
                       const int len);
 int util_buf_write_raw(const uint8_t *, int, const char *pathname);

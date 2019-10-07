@@ -19,6 +19,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 #include "blockchain.h"
+#include "util.h"
 #include <string.h>
 
 #include <openssl/evp.h>
@@ -48,7 +49,7 @@ void blockframe_print(uint8_t *this)
   blockframe_decode(this, prevhash, hash,
     &index, &timestamp, &record_sz, record);
 
-  
+
 
   // printf("prevhash %s\n", prevhash);
   // printf("hash %s\n", hash);
@@ -109,14 +110,8 @@ void block_hash(Block *this, uint8_t *hash)
 // -----------------------------------------------------------------------------
 {
   uint8_t buf[BLOCK_HEADER_SZ + this->record_sz]; // record size is variable
-
   block_frame(this, buf);
-
-  SHA256_CTX sha;
-  SHA256_Init(&sha);
-  SHA256_Update(&sha, buf, BLOCK_HEADER_SZ + this->record_sz);
-  SHA256_Final(hash, &sha);
-
+  util_buf_hash(buf, BLOCK_HEADER_SZ + this->record_sz, hash);
 }
 
 void blockchain_root(Blockchain *this)

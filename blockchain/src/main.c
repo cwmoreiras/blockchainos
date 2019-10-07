@@ -98,7 +98,7 @@ void da_test() {
 
 // should i encapsulate node in linkedlist?
 
-int main() {
+int main(int argc, char *argv) {
 
   util_print_license();
 
