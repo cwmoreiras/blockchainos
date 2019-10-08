@@ -68,12 +68,11 @@ void blockframe_decode(uint8_t *this,
                        uint64_t *record_sz, uint8_t *record);
 void blockframe_print(uint8_t *this) ;
 
+
 typedef struct LinkedList Blockchain; // blockchain is a linked list
 
 // public methods
 void blockchain_init(Blockchain *blockchain); // blockchain contructor
 void blockchain_destroy(Blockchain *blockchain); // blockchain destructor
-
-
 
 #endif

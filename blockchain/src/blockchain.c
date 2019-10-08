@@ -34,6 +34,7 @@ void blockchain_append(Blockchain *this,
                        uint8_t *record,
                        uint64_t record_sz);
 void blockframe_print(uint8_t *this);
+int blockchain_delete_front(void);
 
 void blockframe_print(uint8_t *this) 
 // -----------------------------------------------------------------------------
@@ -188,6 +189,12 @@ void blockchain_append(Blockchain *this,
 
 }
 
+int blockchain_delete_front(void) 
+{
+  return -1; // you can't delete blocks how you would in a linkedlist
+}
+
+
 void blockchain_init(Blockchain *blockchain)
 // -----------------------------------------------------------------------------
 // Func: Initialize a new blockchain
@@ -196,7 +203,12 @@ void blockchain_init(Blockchain *blockchain)
 // -----------------------------------------------------------------------------
 {
   linkedlist_init(blockchain); // blockchain is just a fancy linkedlist
-  blockchain->append = &blockchain_append; // attach member functions
+  
+  // we need to override some of the linkedlist functions
+  // blockchain->insert_front = &blockchain_append;
+  blockchain->append = &blockchain_append;
+  // blockchain->delete_front = &blockchain_delete_front;
+
   blockchain_root(blockchain); // build and attach the root block
 
 }

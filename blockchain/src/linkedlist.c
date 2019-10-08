@@ -51,9 +51,12 @@ void linkedlist_init(LinkedList *this)
   this->tail->prev = NULL;
 
   // assign function pointers
+  // insert_front and append are the same function for linkedlist
   this->insert_front = &linkedlist_insert_front;
+  // this->append = &linkedlist_insert_front;
   this->delete_front = &linkedlist_delete_front;
   this->peek_front = &linkedlist_peek_front;
+  
 }
 
 void linkedlist_insert_front(LinkedList *this, void *data, uint64_t sz)

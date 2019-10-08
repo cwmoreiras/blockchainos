@@ -90,8 +90,6 @@ void da_test() {
     printf("i:%ld , val:%d\n",i, rv);
   }
 
-
-
   dynarray_destroy(da);
   free(da);
 }
@@ -132,6 +130,11 @@ int main(int argc, char *argv[]) {
   blockframe_print(blockframe);
 
   blockchain_destroy(&bc);
+
+  // LinkedList ll;
+  // linkedlist_init(&ll);
+  // ll.append(&ll, record, record_sz);
+  // linkedlist_destroy(&ll);
 
   return 0;
 }

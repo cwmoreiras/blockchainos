@@ -52,7 +52,10 @@ struct LinkedList
   void (*delete_front)(LinkedList *this);
   void *(*peek_front)(LinkedList *this);
 
-  // these members are blockchain only
+  // the blockchain uses a different implementation of append than linkedlist
+  // linkedlist->append will just call linkedlist->insert_front
+  // this is implemented by assigning this function pointer to a different
+  // address in the blockchain constructor vs the linkedlist constructor
   void (*append)(LinkedList *this,
                  uint8_t *record,
                  uint64_t record_sz);
