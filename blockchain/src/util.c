@@ -28,6 +28,43 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <string.h>
 
+void util_cmd_hash(const char *str) 
+// -----------------------------------------------------------------------------
+// Func: 
+// Args:
+// Retn:
+// -----------------------------------------------------------------------------
+{
+  uint8_t hash[SHA256_DIGEST_LENGTH];
+  int sz = strlen(str)+1; // include the null terminator
+
+  util_buf_hash((uint8_t*) str, sz, hash);
+  util_buf_print_hex(hash, SHA256_DIGEST_LENGTH, "hash", 1);
+
+}
+
+void util_buf_print_hex(uint8_t *buf, uint64_t buf_sz, 
+                        const char *label, const int newline)
+// -----------------------------------------------------------------------------
+// Func: 
+// Args:
+// Retn:
+// -----------------------------------------------------------------------------
+{
+  uint64_t i;
+
+  if (label != NULL)
+    printf("%s: 0x", label);
+  else 
+    printf("0x");
+
+  for (i = 0; i < buf_sz; i++) 
+    printf("%02x", buf[i]);
+
+  if (newline)
+    printf("\n");
+}
+
 void util_buf_hash(uint8_t *buf, uint64_t buf_sz, uint8_t *hash) 
 // -----------------------------------------------------------------------------
 // Func: Hash any buffer
@@ -56,6 +93,8 @@ int util_print_license(void)
   printf("for details type 'show w'\n");
   printf("This is free software, and you are welcome to redisribute it\n");
   printf("under certain conditions; type 'show c' for details\n");
+  printf("-------------------------------------------------------------------------\n");
+
 
   return 0; // todo error codes
 }
@@ -71,7 +110,7 @@ int util_buf_write_raw(const uint8_t *buf, int n, const char *pathname)
 {
   // see man page for open to read about O_CLOEXEC in multithreaded
   // programs
-  int fd = open(pathname, O_CREAT|O_WRONLY|O_TRUNC|O_CLOEXEC);
+  int fd = open(pathname, O_CREAT|O_WRONLY|O_TRUNC);
 
   if (fd < 0) {
     return fd;

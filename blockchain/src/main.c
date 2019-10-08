@@ -98,9 +98,23 @@ void da_test() {
 
 // should i encapsulate node in linkedlist?
 
-int main(int argc, char *argv) {
+int main(int argc, char *argv[]) {
 
   util_print_license();
+
+  if (argc > 1) { // process flags
+    if (strlen(argv[1]) == 2 && argv[1][0] == '-') {
+      switch (argv[1][1]) {
+        case 'h': util_cmd_hash(argv[2]); break;
+        default: printf("Command line argument is not recognized\n");
+      }
+    }
+    else {
+      printf("Command line argument is malformed\n");
+    }
+    
+    return 0;
+  }
 
   uint8_t *blockframe;
 
@@ -118,4 +132,6 @@ int main(int argc, char *argv) {
   blockframe_print(blockframe);
 
   blockchain_destroy(&bc);
+
+  return 0;
 }

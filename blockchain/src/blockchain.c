@@ -49,14 +49,16 @@ void blockframe_print(uint8_t *this)
   blockframe_decode(this, prevhash, hash,
     &index, &timestamp, &record_sz, record);
 
+  printf("-------------------------------------------------------------------------\n");
+  util_buf_print_hex(prevhash, SHA256_DIGEST_LENGTH, "phash", 1);
+  util_buf_print_hex(hash, SHA256_DIGEST_LENGTH, "hash ", 1);
 
-
-  // printf("prevhash %s\n", prevhash);
-  // printf("hash %s\n", hash);
   printf("index: %lu\n", index);
   printf("tstmp: %lu\n", timestamp);
   printf("recsz: %lu\n", record_sz);
-  // printf("%s\n", record);
+
+  util_buf_print_hex(record, record_sz, "recrd", 1);
+  
 }
 
 void blockframe_decode(uint8_t *this,
