@@ -38,8 +38,10 @@ void util_cmd_hash(const char *str)
   uint8_t hash[SHA256_DIGEST_LENGTH];
   int sz = strlen(str)+1; // include the null terminator
 
+  util_buf_write_raw((uint8_t *)str, sz, "test/raw");
+  util_buf_print_hex((uint8_t *)str, sz, "strng", 1);
   util_buf_hash((uint8_t*) str, sz, hash);
-  util_buf_print_hex(hash, SHA256_DIGEST_LENGTH, "hash", 1);
+  util_buf_print_hex(hash, SHA256_DIGEST_LENGTH, "hash ", 1);
 
 }
 
@@ -110,7 +112,7 @@ int util_buf_write_raw(const uint8_t *buf, int n, const char *pathname)
 {
   // see man page for open to read about O_CLOEXEC in multithreaded
   // programs
-  int fd = open(pathname, O_CREAT|O_WRONLY|O_TRUNC);
+  int fd = open(pathname, O_CREAT|O_WRONLY|O_TRUNC, 0666); //rw permissions
 
   if (fd < 0) {
     return fd;
