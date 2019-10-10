@@ -32,6 +32,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 void blockchain_append(Blockchain *this,
                uint8_t *record,
                uint64_t record_sz);
+void *blockchain_peek_front(Blockchain *this);
 
 // Blockchain functions
 void blockchain_verify_block(Blockchain *this);
@@ -41,7 +42,7 @@ void blockframe_print(uint8_t *this);
 void block_hash(Block *this, uint8_t *hash);
 void block_frame(Block *this, uint8_t *buf);
 
-    void blockchain_init(Blockchain *this)
+void blockchain_init(Blockchain *this)
 // -----------------------------------------------------------------------------
 // Func: Initialize a new blockchain
 // Args: this - a pointer to the new chain object
@@ -54,11 +55,16 @@ void block_frame(Block *this, uint8_t *buf);
   // Override/map methods
   this->insert_front = &blockchain_append;
   // this->delete_front = &blockchain_delete_front;
-  // this->peek_front = &blockchain_peek_front;
-  this->peek_front = this->ll->peek_front;
+  this->peek_front = &blockchain_peek_front;
 
   blockchain_root(this); // build and attach the root block
 
+}
+
+void *blockchain_peek_front(Blockchain *this)
+{
+  void *ret = this->ll->peek_front(this->ll);
+  return ret;
 }
 
 void blockchain_append(Blockchain *this,
