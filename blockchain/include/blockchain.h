@@ -43,6 +43,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define RECORD_POS      88
 
 typedef struct Block Block;
+typedef struct Blockchain Blockchain;
+
 struct Block 
 // -----------------------------------------------------------------------------
 // Description
@@ -68,11 +70,32 @@ void blockframe_decode(uint8_t *this,
                        uint64_t *record_sz, uint8_t *record);
 void blockframe_print(uint8_t *this) ;
 
+struct Blockchain
+//------------------------------------------------------------------------------
+// Description
+//  Definition of the Blockchain.  Blockchain is essentially a wrapper for
+//  LinkedList, acting as a subclass with altered method implementation.
+//  TODO: Better doc
+//------------------------------------------------------------------------------
+{
+  LinkedList *ll;
 
-typedef struct LinkedList Blockchain; // blockchain is a linked list
+  // peek_front maps directly to LinkedList->peek_front
+  void *(*peek_front)(Blockchain *this);
+
+  // Blockchain->insert_front has different implementation than
+  // LinkedList->insert_front
+  void (*insert_front)(Blockchain *this,
+                 uint8_t *record,
+                 uint64_t record_sz);
+
+  // Can't delete blocks... returns error.
+  // I think we can get rid of this...
+  // void (*delete_front)(Blockchain *this);
+};
 
 // public methods
-void blockchain_init(Blockchain *blockchain); // blockchain contructor
-void blockchain_destroy(Blockchain *blockchain); // blockchain destructor
+void blockchain_init(Blockchain *this); // blockchain contructor
+void blockchain_destroy(Blockchain *this); // blockchain destructor
 
 #endif

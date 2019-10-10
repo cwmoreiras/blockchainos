@@ -125,9 +125,9 @@ int main(int argc, char *argv[]) {
   blockframe = (uint8_t *) bc.peek_front(&bc); // returns a framed block
   blockframe_print(blockframe);
 
-  bc.append(&bc, record, record_sz);
+  bc.insert_front(&bc, record, record_sz);
   blockframe = (uint8_t *) bc.peek_front(&bc); // returns a framed block
-  blockframe_print(blockframe);
+  // blockframe_print(blockframe);
 
   blockchain_destroy(&bc);
 
