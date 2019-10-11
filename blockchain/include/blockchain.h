@@ -83,14 +83,15 @@ struct Blockchain
   // peek_front maps directly to LinkedList->peek_front
   void *(*peek_front)(Blockchain *this);
 
-  // Blockchain->insert_front has different implementation than
-  // LinkedList->insert_front
+  // Blockchain->insert_front has different implementation 
+  // than LinkedList->insert_front. We can call this append,
+  // but this seems more obj oriented if that's desireable
   void (*insert_front)(Blockchain *this,
                  uint8_t *record,
                  uint64_t record_sz);
 
-  // Can't delete blocks... returns error.
-  // I think we can get rid of this...
+  // Can't delete blocks... returns error.  I think we can get rid of this... 
+  // unless we want to stress that this is a subclass
   // void (*delete_front)(Blockchain *this);
 };
 

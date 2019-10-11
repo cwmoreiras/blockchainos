@@ -27,7 +27,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
-// LinkedList functions
+//----------------------//
+// "PRIVATE" PROTOTYPES //
+//----------------------//
+
+// LinkedList "inherited" functions
 // int blockchain_delete_front(Blockchain *this);
 void blockchain_append(Blockchain *this,
                uint8_t *record,
@@ -38,9 +42,18 @@ void *blockchain_peek_front(Blockchain *this);
 void blockchain_verify_block(Blockchain *this);
 void blockchain_verify_chain(Blockchain *this);
 void blockchain_root(Blockchain *this);
+// Block functions
 void blockframe_print(uint8_t *this);
 void block_hash(Block *this, uint8_t *hash);
 void block_frame(Block *this, uint8_t *buf);
+void blockframe_decode(uint8_t *this,
+                       uint8_t *prevhash, uint8_t *hash,
+                       uint64_t *index, uint64_t *timestamp,
+                       uint64_t *record_sz, uint8_t *record);
+
+//-----------------//
+// IMPLEMENTATIONS //
+//-----------------//
 
 void blockchain_init(Blockchain *this)
 // -----------------------------------------------------------------------------
@@ -62,6 +75,12 @@ void blockchain_init(Blockchain *this)
 }
 
 void *blockchain_peek_front(Blockchain *this)
+// -----------------------------------------------------------------------------
+// Func: Gets first framed block at front of chain
+// Args: this - a pointer to the blockchain
+// Retn: Pointer to framed block
+// -----------------------------------------------------------------------------
+
 {
   void *ret = this->ll->peek_front(this->ll);
   return ret;
@@ -110,87 +129,6 @@ void blockchain_append(Blockchain *this,
 //   return -1; // you can't delete blocks how you would in a linkedlist
 // }
 
-void blockframe_print(uint8_t *this) 
-// -----------------------------------------------------------------------------
-// Func: 
-// Args:
-// Retn:
-// -----------------------------------------------------------------------------
-{
-  uint8_t prevhash[1000], hash[1000];
-  uint64_t index, timestamp, record_sz;
-  uint8_t record[1000];
-
-  blockframe_decode(this, prevhash, hash,
-    &index, &timestamp, &record_sz, record);
-
-  printf("-------------------------------------------------------------------------\n");
-  util_buf_print_hex(prevhash, SHA256_DIGEST_LENGTH, "phash", 1);
-  util_buf_print_hex(hash, SHA256_DIGEST_LENGTH, "hash ", 1);
-
-  printf("index: %lu\n", index);
-  printf("tstmp: %lu\n", timestamp);
-  printf("recsz: %lu\n", record_sz);
-
-  util_buf_print_hex(record, record_sz, "recrd", 1);
-  
-}
-
-void blockframe_decode(uint8_t *this,
-                       uint8_t *prevhash, uint8_t *hash,
-                       uint64_t *index, uint64_t *timestamp,
-                       uint64_t *record_sz, uint8_t *record)
-// -----------------------------------------------------------------------------
-// Func: Inverse of block_frame function. Takes a block frame and extracts its 
-//       contents to facilitate certain processing needs
-// Args: this - a pointer to the block frame
-//       prevhash - pointer to the previous hash
-//       hash - a pointer to this block's hash
-//       index - pointer to the index of this block
-//       timestamp - pointer to this block's original timestamp
-//       record_sz - pointer to the size of this block's record
-//       record - points to the first element of the record
-// Retn:
-// -----------------------------------------------------------------------------
-{
-  memcpy(prevhash, &this[PREVHASH_POS], HASH_SZ);
-  memcpy(hash, &this[CURRHASH_POS], HASH_SZ);
-  *index = *(uint64_t *)&this[INDEX_POS];
-  *timestamp = *(uint64_t *)&this[TS_POS];
-  memcpy(record_sz, &this[RECORD_SZ_POS], WORD_SZ);
-  memcpy(record, &this[RECORD_POS], *record_sz);
-}
-
-// frames a block (stores all members in a buffer with no padding)
-void block_frame(Block *this, uint8_t *buf)
-// -----------------------------------------------------------------------------
-// Func: Store the contents of the block struct in an array to remove 0 buffer
-// Args: block - a pointer to this block
-//       buf - the buffer that the contents of the block will be copied to
-// Retn: None
-// -----------------------------------------------------------------------------
-{
-  memcpy(&buf[PREVHASH_POS], this->prevhash, HASH_SZ);
-  memcpy(&buf[CURRHASH_POS], this->hash, HASH_SZ);
-  memcpy(&buf[INDEX_POS], &this->index, WORD_SZ);
-  memcpy(&buf[TS_POS], &this->timestamp, WORD_SZ);
-  memcpy(&buf[RECORD_SZ_POS], &this->record_sz, WORD_SZ);
-  memcpy(&buf[RECORD_POS], this->record, this->record_sz);
-}
-
-void block_hash(Block *this, uint8_t *hash)
-// -----------------------------------------------------------------------------
-// Func: Hash the the block after removing struct 0 padding
-// Args: this - a pointer to the block
-//       hash - a pointer to the hash of the block
-// Retn: None
-// -----------------------------------------------------------------------------
-{
-  uint8_t buf[BLOCK_HEADER_SZ + this->record_sz]; // record size is variable
-  block_frame(this, buf);
-  util_buf_hash(buf, BLOCK_HEADER_SZ + this->record_sz, hash);
-}
-
 void blockchain_root(Blockchain *this)
 // -----------------------------------------------------------------------------
 // Func: Construct the blockchain's root block (must be hardcoded)
@@ -234,4 +172,86 @@ void blockchain_destroy(Blockchain *this)
 {
   linkedlist_destroy(this->ll); // just need to destroy the list
   free(this->ll);
+}
+
+
+void blockframe_print(uint8_t *this) 
+// -----------------------------------------------------------------------------
+// Func: Decodes the framed block and prints its contents
+// Args: this - pointer to framed block
+// Retn: None
+// -----------------------------------------------------------------------------
+{
+  uint8_t prevhash[1000], hash[1000];
+  uint64_t index, timestamp, record_sz;
+  uint8_t record[1000];
+
+  blockframe_decode(this, prevhash, hash,
+    &index, &timestamp, &record_sz, record);
+
+  printf("-------------------------------------------------------------------------\n");
+  util_buf_print_hex(prevhash, SHA256_DIGEST_LENGTH, "phash", 1);
+  util_buf_print_hex(hash, SHA256_DIGEST_LENGTH, "hash ", 1);
+
+  printf("index: %lu\n", index);
+  printf("tstmp: %lu\n", timestamp);
+  printf("recsz: %lu\n", record_sz);
+
+  util_buf_print_hex(record, record_sz, "recrd", 1);
+  
+}
+
+void blockframe_decode(uint8_t *this,
+                       uint8_t *prevhash, uint8_t *hash,
+                       uint64_t *index, uint64_t *timestamp,
+                       uint64_t *record_sz, uint8_t *record)
+// -----------------------------------------------------------------------------
+// Func: Inverse of block_frame function. Takes a block frame and extracts its 
+//       contents to facilitate certain processing needs
+// Args: this - a pointer to the block frame
+//       prevhash - pointer to the previous hash
+//       hash - a pointer to this block's hash
+//       index - pointer to the index of this block
+//       timestamp - pointer to this block's original timestamp
+//       record_sz - pointer to the size of this block's record
+//       record - points to the first element of the record
+// Retn: None
+// -----------------------------------------------------------------------------
+{
+  memcpy(prevhash, &this[PREVHASH_POS], HASH_SZ);
+  memcpy(hash, &this[CURRHASH_POS], HASH_SZ);
+  *index = *(uint64_t *)&this[INDEX_POS];
+  *timestamp = *(uint64_t *)&this[TS_POS];
+  memcpy(record_sz, &this[RECORD_SZ_POS], WORD_SZ);
+  memcpy(record, &this[RECORD_POS], *record_sz);
+}
+
+// frames a block (stores all members in a buffer with no padding)
+void block_frame(Block *this, uint8_t *buf)
+// -----------------------------------------------------------------------------
+// Func: Store the contents of the block struct in an array to remove 0 buffer
+// Args: block - a pointer to this block
+//       buf - the buffer that the contents of the block will be copied to
+// Retn: None
+// -----------------------------------------------------------------------------
+{
+  memcpy(&buf[PREVHASH_POS], this->prevhash, HASH_SZ);
+  memcpy(&buf[CURRHASH_POS], this->hash, HASH_SZ);
+  memcpy(&buf[INDEX_POS], &this->index, WORD_SZ);
+  memcpy(&buf[TS_POS], &this->timestamp, WORD_SZ);
+  memcpy(&buf[RECORD_SZ_POS], &this->record_sz, WORD_SZ);
+  memcpy(&buf[RECORD_POS], this->record, this->record_sz);
+}
+
+void block_hash(Block *this, uint8_t *hash)
+// -----------------------------------------------------------------------------
+// Func: Hash the the block after removing struct 0 padding
+// Args: this - a pointer to the block
+//       hash - a pointer to the hash of the block
+// Retn: None
+// -----------------------------------------------------------------------------
+{
+  uint8_t buf[BLOCK_HEADER_SZ + this->record_sz]; // record size is variable
+  block_frame(this, buf);
+  util_buf_hash(buf, BLOCK_HEADER_SZ + this->record_sz, hash);
 }
