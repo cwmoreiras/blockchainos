@@ -53,6 +53,7 @@ void blockframe_print(uint8_t *this);
 // IMPLEMENTATIONS //
 //-----------------//
 
+// wrapper for the linked list implementation of get
 void *blockchain_get(Blockchain *this, uint64_t index) {
   return this->ll->get(this->ll, index);
 }
@@ -87,6 +88,10 @@ int blockchain_verify_chain(Blockchain *this) {
 
     // get the previous one
     frame = (uint8_t *) this->get(this, i-1);
+    blockframe_decode(frame, &old_block);
+
+    if (!blockchain_verify_block(&new_block, &old_block))
+      return 0;
   }
 
   return 1;
