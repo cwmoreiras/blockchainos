@@ -42,20 +42,31 @@ int blockchain_verify_block(Block *new_block, Block *old_block);
 void blockchain_verify_chain(Blockchain *this);
 void blockchain_root(Blockchain *this);
 // Block functions
-void blockframe_print(uint8_t *this);
 void block_hash(Block *this, uint8_t *hash);
-// block frame functions
 void block_frame(Block *this, uint8_t *buf);
-void blockframe_decode(uint8_t *this,
-                       uint8_t *prevhash, uint8_t *hash,
-                       uint64_t *index, uint64_t *timestamp,
-                       uint64_t *record_sz, uint8_t *record);
+// BlockFrame functions
+void blockframe_decode(uint8_t *blockframe, Block *block);
+void blockframe_print(uint8_t *this);
 
 //-----------------//
 // IMPLEMENTATIONS //
 //-----------------//
 
-int blockchain_verify_block(Block *new_block, Block *old_block) {
+int blockchain_verify_block(Block *block, Block *prev_block) {
+  uint64_t blocksize = BLOCK_HEADER_SZ + block->record_sz;
+  uint8_t buf[blocksize];
+  uint8_t hash[HASH_SZ];
+
+  util_buf_hash(buf, blocksize, hash);
+
+  if (prev_block->index + 1 != block->index+1)
+    return 0;
+  else if (prev_block->hash != block->prevhash)
+    return 0;
+  else if (!strncmp((char *)hash, (char *)block->hash,  HASH_SZ))
+    return 0;
+
+  return 1;
 
 }
 
@@ -77,7 +88,6 @@ void blockchain_init(Blockchain *this)
 
 
   blockchain_root(this); // build and attach the root block
-
 }
 
 void *blockchain_peek_front(Blockchain *this)
@@ -88,8 +98,7 @@ void *blockchain_peek_front(Blockchain *this)
 // -----------------------------------------------------------------------------
 
 {
-  void *ret = this->ll->peek_front(this->ll);
-  return ret;
+  return this->ll->peek_front(this->ll);
 }
 
 void blockchain_insert_front(Blockchain *this,
@@ -104,21 +113,25 @@ void blockchain_insert_front(Blockchain *this,
 // -----------------------------------------------------------------------------
 {
   Block block;
+  Block prev_block;
+
   uint64_t blocksize = BLOCK_HEADER_SZ + record_sz;
   uint8_t buf[blocksize];
   uint8_t hash[HASH_SZ];
 
   // get a pointer to the previous block
-  Block *prevblock = (Block *)this->peek_front(this);
+  uint8_t *prev_blockframe = (uint8_t *)this->peek_front(this);
+  prev_block.record = malloc(prev_blockframe[RECORD_SZ_POS]);
+  blockframe_decode(prev_blockframe, &prev_block);
 
   block.record_sz = record_sz;
   block.record = malloc(block.record_sz);
   memcpy(block.record, record, block.record_sz); // copy record into block
 
   block.timestamp = time(NULL);
-  block.index = prevblock->index+1; // increment index
+  block.index = prev_block.index+1; // increment index
 
-  memcpy(block.prevhash, prevblock->hash, HASH_SZ); // copy the prev blocks hash
+  memcpy(block.prevhash, prev_block.hash, HASH_SZ); // copy the prev blocks hash
   memset(block.hash, 0, HASH_SZ); // set the hash field to 0
 
   block_hash(&block, hash); // hash the block
@@ -181,36 +194,31 @@ void blockchain_destroy(Blockchain *this)
 }
 
 
-void blockframe_print(uint8_t *this) 
+void blockframe_print(uint8_t *blockframe) 
 // -----------------------------------------------------------------------------
 // Func: Decodes the framed block and prints its contents
 // Args: this - pointer to framed block
 // Retn: None
 // -----------------------------------------------------------------------------
 {
-  uint8_t prevhash[1000], hash[1000];
-  uint64_t index, timestamp, record_sz;
-  uint8_t record[1000];
+  Block block;
 
-  blockframe_decode(this, prevhash, hash,
-    &index, &timestamp, &record_sz, record);
+  block.record = malloc(blockframe[RECORD_SZ_POS]);
+  blockframe_decode(blockframe, &block);
 
   printf("-------------------------------------------------------------------------\n");
-  util_buf_print_hex(prevhash, HASH_SZ, "phash", 1);
-  util_buf_print_hex(hash, HASH_SZ, "hash ", 1);
+  util_buf_print_hex(block.prevhash, HASH_SZ, "phash", 1);
+  util_buf_print_hex(block.hash, HASH_SZ, "hash ", 1);
 
-  printf("index: %lu\n", index);
-  printf("tstmp: %lu\n", timestamp);
-  printf("recsz: %lu\n", record_sz);
+  printf("index: %lu\n", block.index);
+  printf("tstmp: %lu\n", block.timestamp);
+  printf("recsz: %lu\n", block.record_sz);
 
-  util_buf_print_hex(record, record_sz, "recrd", 1);
-  
+  util_buf_print_hex(block.record, block.record_sz, "recrd", 1);
+  free(block.record);
 }
 
-void blockframe_decode(uint8_t *this,
-                       uint8_t *prevhash, uint8_t *hash,
-                       uint64_t *index, uint64_t *timestamp,
-                       uint64_t *record_sz, uint8_t *record)
+void blockframe_decode(uint8_t *blockframe, Block *block)
 // -----------------------------------------------------------------------------
 // Func: Inverse of block_frame function. Takes a block frame and extracts its 
 //       contents to facilitate certain processing needs
@@ -224,12 +232,12 @@ void blockframe_decode(uint8_t *this,
 // Retn: None
 // -----------------------------------------------------------------------------
 {
-  memcpy(prevhash, &this[PREVHASH_POS], HASH_SZ);
-  memcpy(hash, &this[CURRHASH_POS], HASH_SZ);
-  *index = *(uint64_t *)&this[INDEX_POS];
-  *timestamp = *(uint64_t *)&this[TS_POS];
-  memcpy(record_sz, &this[RECORD_SZ_POS], WORD_SZ);
-  memcpy(record, &this[RECORD_POS], *record_sz);
+  memcpy(block->prevhash, &blockframe[PREVHASH_POS], HASH_SZ);
+  memcpy(block->hash, &blockframe[CURRHASH_POS], HASH_SZ);
+  block->index = *(uint64_t *)&blockframe[INDEX_POS];
+  block->timestamp = *(uint64_t *)&blockframe[TS_POS];
+  block->record_sz = *(uint_fast64_t *)&blockframe[RECORD_SZ_POS];
+  memcpy(block->record, &blockframe[RECORD_POS], block->record_sz);
 }
 
 // frames a block (stores all members in a buffer with no padding)

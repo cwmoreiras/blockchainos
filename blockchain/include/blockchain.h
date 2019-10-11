@@ -59,10 +59,7 @@ struct Block
 };
 
 // TODO encapsulate these functions?
-void blockframe_decode(uint8_t *this,
-                       uint8_t *prevhash, uint8_t *hash,
-                       uint64_t *index, uint64_t *timestamp,
-                       uint64_t *record_sz, uint8_t *record);
+void blockframe_decode(uint8_t *blockframe, Block *block);
 void blockframe_print(uint8_t *this) ;
 
 struct Blockchain
