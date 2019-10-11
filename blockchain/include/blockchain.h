@@ -24,16 +24,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "node.h"
 #include "linkedlist.h"
 
-#include <openssl/evp.h>
-#include <openssl/ssl.h>
-#include <openssl/rsa.h>
-#include <openssl/x509.h>
-
 #define BLOCK_HEADER_SZ 88
 
-#define HASH_SZ         SHA256_DIGEST_LENGTH
-#define WORD_SZ         8 // 8 byte words for high integer counters, etc
-                          // probably unecessary?
+#define HASH_SZ         32 // SHA256 sum has 32 byte digest
+#define WORD_SZ         8  // 8 byte words for high integer counters, etc
+                           // probably unecessary?
 
 #define PREVHASH_POS    0
 #define CURRHASH_POS    32

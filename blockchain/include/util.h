@@ -24,11 +24,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <stdint.h>
 
-#include <openssl/evp.h>
-#include <openssl/ssl.h>
-#include <openssl/rsa.h>
-#include <openssl/x509.h>
-
 // meta data
 #define PROG_NAME "blockchainos"
 #define COPYRIGHT_YEAR "2019"

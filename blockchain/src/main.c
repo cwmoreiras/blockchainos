@@ -31,12 +31,6 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "linkedlist.h"
 #include "dynarray.h"
 
-
-#include <openssl/evp.h>
-#include <openssl/ssl.h>
-#include <openssl/rsa.h>
-#include <openssl/x509.h>
-
 void ll_test() {
   LinkedList chain;
 

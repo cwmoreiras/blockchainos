@@ -20,12 +20,11 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include "blockchain.h"
 #include "util.h"
-#include <string.h>
 
-#include <openssl/evp.h>
-#include <openssl/ssl.h>
-#include <openssl/rsa.h>
-#include <openssl/x509.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
 
 void blockchain_verify_block(Blockchain *this);
 void blockchain_verify_chain(Blockchain *this);
@@ -51,8 +50,8 @@ void blockframe_print(uint8_t *this)
     &index, &timestamp, &record_sz, record);
 
   printf("-------------------------------------------------------------------------\n");
-  util_buf_print_hex(prevhash, SHA256_DIGEST_LENGTH, "phash", 1);
-  util_buf_print_hex(hash, SHA256_DIGEST_LENGTH, "hash ", 1);
+  util_buf_print_hex(prevhash, HASH_SZ, "phash", 1);
+  util_buf_print_hex(hash, HASH_SZ, "hash ", 1);
 
   printf("index: %lu\n", index);
   printf("tstmp: %lu\n", timestamp);

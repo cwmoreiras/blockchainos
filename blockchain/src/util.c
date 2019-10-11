@@ -28,6 +28,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <unistd.h>
 #include <string.h>
 
+// openssl header files
+#include <openssl/crypto.h>
+#include <openssl/sha.h>
+
 void util_cmd_hash(const char *str) 
 // -----------------------------------------------------------------------------
 // Func: 
