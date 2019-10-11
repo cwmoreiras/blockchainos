@@ -137,7 +137,7 @@ void blockchain_root(Blockchain *this)
 // -----------------------------------------------------------------------------
 {
   Block block;
-  uint8_t *record = (uint8_t *)"this is the first block"; // message can change
+  uint8_t *record = (uint8_t *)"root node"; // message can change
   uint64_t record_sz = strlen((char *)record)+1; // count the null character
   uint64_t blocksize = BLOCK_HEADER_SZ + record_sz;
   uint8_t buf[blocksize];

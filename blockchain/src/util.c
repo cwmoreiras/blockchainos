@@ -43,9 +43,9 @@ void util_cmd_hash(const char *str)
   int sz = strlen(str)+1; // include the null terminator
 
   util_buf_write_raw((uint8_t *)str, sz, "test/raw");
-  util_buf_print_hex((uint8_t *)str, sz, "strng", 1);
+  util_buf_print_hex((uint8_t *)str, sz, NULL, 1);
   util_buf_hash((uint8_t*) str, sz, hash);
-  util_buf_print_hex(hash, SHA256_DIGEST_LENGTH, "hash ", 1);
+  util_buf_print_hex(hash, SHA256_DIGEST_LENGTH, NULL, 1);
 
 }
 
@@ -60,9 +60,7 @@ void util_buf_print_hex(uint8_t *buf, uint64_t buf_sz,
   uint64_t i;
 
   if (label != NULL)
-    printf("%s: 0x", label);
-  else 
-    printf("0x");
+    printf("%s: ", label);
 
   for (i = 0; i < buf_sz; i++) 
     printf("%02x", buf[i]);

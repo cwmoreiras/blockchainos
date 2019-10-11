@@ -92,7 +92,9 @@ void da_test() {
 
 int main(int argc, char *argv[]) {
 
+  #ifndef DEBUG
   util_print_license();
+  #endif
 
   if (argc > 1) { // process flags
     if (strlen(argv[1]) == 2 && argv[1][0] == '-') {
