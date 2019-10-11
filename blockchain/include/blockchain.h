@@ -85,6 +85,8 @@ struct Blockchain
                  uint8_t *record,
                  uint64_t record_sz);
 
+  int (*verify_block) (Block *new_block, Block *old_block);
+
   // Can't delete blocks... returns error.  I think we can get rid of this... 
   // unless we want to stress that this is a subclass
   // void (*delete_front)(Blockchain *this);

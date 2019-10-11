@@ -32,18 +32,19 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // LinkedList "inherited" functions
 // int blockchain_delete_front(Blockchain *this);
-void blockchain_append(Blockchain *this,
+void blockchain_insert_front(Blockchain *this,
                uint8_t *record,
                uint64_t record_sz);
 void *blockchain_peek_front(Blockchain *this);
 
 // Blockchain functions
-void blockchain_verify_block(Blockchain *this);
+int blockchain_verify_block(Block *new_block, Block *old_block);
 void blockchain_verify_chain(Blockchain *this);
 void blockchain_root(Blockchain *this);
 // Block functions
 void blockframe_print(uint8_t *this);
 void block_hash(Block *this, uint8_t *hash);
+// block frame functions
 void block_frame(Block *this, uint8_t *buf);
 void blockframe_decode(uint8_t *this,
                        uint8_t *prevhash, uint8_t *hash,
@@ -53,6 +54,10 @@ void blockframe_decode(uint8_t *this,
 //-----------------//
 // IMPLEMENTATIONS //
 //-----------------//
+
+int blockchain_verify_block(Block *new_block, Block *old_block) {
+
+}
 
 void blockchain_init(Blockchain *this)
 // -----------------------------------------------------------------------------
@@ -65,9 +70,10 @@ void blockchain_init(Blockchain *this)
   linkedlist_init(this->ll); // blockchain is just a fancy linkedlist
   
   // Override/map methods
-  this->insert_front = &blockchain_append;
+  this->insert_front = &blockchain_insert_front;
   // this->delete_front = &blockchain_delete_front;
   this->peek_front = &blockchain_peek_front;
+  this->verify_block = &blockchain_verify_block;
 
 
   blockchain_root(this); // build and attach the root block
@@ -86,7 +92,7 @@ void *blockchain_peek_front(Blockchain *this)
   return ret;
 }
 
-void blockchain_append(Blockchain *this,
+void blockchain_insert_front(Blockchain *this,
                        uint8_t *record,
                        uint64_t record_sz)
 // -----------------------------------------------------------------------------
@@ -137,7 +143,7 @@ void blockchain_root(Blockchain *this)
 // -----------------------------------------------------------------------------
 {
   Block block;
-  uint8_t *record = (uint8_t *)"root node"; // message can change
+  uint8_t *record = (uint8_t *)"this is the first block"; // message can change
   uint64_t record_sz = strlen((char *)record)+1; // count the null character
   uint64_t blocksize = BLOCK_HEADER_SZ + record_sz;
   uint8_t buf[blocksize];
