@@ -36,10 +36,11 @@ void blockchain_insert_front(Blockchain *this,
                uint8_t *record,
                uint64_t record_sz);
 void *blockchain_peek_front(Blockchain *this);
+void *blockchain_get(Blockchain *this, uint64_t index);
 
 // Blockchain functions
 int blockchain_verify_block(Block *new_block, Block *old_block);
-void blockchain_verify_chain(Blockchain *this);
+int blockchain_verify_chain(Blockchain *this);
 void blockchain_root(Blockchain *this);
 // Block functions
 void block_hash(Block *this, uint8_t *hash);
@@ -51,6 +52,10 @@ void blockframe_print(uint8_t *this);
 //-----------------//
 // IMPLEMENTATIONS //
 //-----------------//
+
+void *blockchain_get(Blockchain *this, uint64_t index) {
+  return this->ll->get(this->ll, index);
+}
 
 int blockchain_verify_block(Block *block, Block *prev_block) {
   uint64_t blocksize = BLOCK_HEADER_SZ + block->record_sz;
@@ -70,6 +75,23 @@ int blockchain_verify_block(Block *block, Block *prev_block) {
 
 }
 
+int blockchain_verify_chain(Blockchain *this) {
+  uint64_t i;
+  uint64_t length = this->length;
+  uint8_t *frame;
+  Block old_block, new_block;
+
+  for (i = length-1; i >= 1; i--) {
+    frame = (uint8_t *) this->get(this, i);
+    blockframe_decode(frame, &new_block);
+
+    // get the previous one
+    frame = (uint8_t *) this->get(this, i-1);
+  }
+
+  return 1;
+}
+
 void blockchain_init(Blockchain *this)
 // -----------------------------------------------------------------------------
 // Func: Initialize a new blockchain
@@ -78,16 +100,19 @@ void blockchain_init(Blockchain *this)
 // -----------------------------------------------------------------------------
 {
   this->ll = malloc(sizeof(LinkedList));
+  this->length = 0;
   linkedlist_init(this->ll); // blockchain is just a fancy linkedlist
   
   // Override/map methods
   this->insert_front = &blockchain_insert_front;
   // this->delete_front = &blockchain_delete_front;
   this->peek_front = &blockchain_peek_front;
+  this->get = &blockchain_get;
   this->verify_block = &blockchain_verify_block;
 
 
   blockchain_root(this); // build and attach the root block
+  this->length = 1;
 }
 
 void *blockchain_peek_front(Blockchain *this)
@@ -137,8 +162,11 @@ void blockchain_insert_front(Blockchain *this,
   block_hash(&block, hash); // hash the block
   memcpy(&block.hash, hash, HASH_SZ); // copy the hash into the hash field
   block_frame(&block, buf); // frame for storage
+
+
  
   this->ll->insert_front(this->ll, buf, blocksize); // append to the chain
+  this->length++;
   free(block.record); // free the local copy
 
 }

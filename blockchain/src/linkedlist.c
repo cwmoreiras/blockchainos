@@ -27,6 +27,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 void linkedlist_insert_front(LinkedList *this, void *data, uint64_t sz);
 void linkedlist_delete_front(LinkedList *this);
 void *linkedlist_peek_front(LinkedList *this);
+void *linkedlist_get(LinkedList *this, uint64_t index);
 void linkedlist_destroy(LinkedList *this);
 
 void linkedlist_init(LinkedList *this)
@@ -54,9 +55,22 @@ void linkedlist_init(LinkedList *this)
   // insert_front and append are the same function for linkedlist
   this->insert_front = &linkedlist_insert_front;
   // this->append = &linkedlist_insert_front;
+  this->get = &linkedlist_get;
   this->delete_front = &linkedlist_delete_front;
   this->peek_front = &linkedlist_peek_front;
   
+}
+
+void *linkedlist_get(LinkedList *this, uint64_t index) {
+  uint64_t sz = this->sz;
+  uint64_t i;
+
+  Node *curr  = this->head;
+  for (i = sz; i >= index; i--) {
+    curr = curr->prev;
+  }
+
+  return curr->data; // return the data
 }
 
 void linkedlist_insert_front(LinkedList *this, void *data, uint64_t sz)
