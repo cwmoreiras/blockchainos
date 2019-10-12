@@ -84,6 +84,23 @@ int blockchain_verify_block(Block *new_block, Block *old_block) {
     util_buf_print_hex(hash,            HASH_SZ, "calculated hash", 1);
     return 0;
   }
+  else if (sizeof(new_block->prevhash) != HASH_SZ) {
+    return 0;
+  }
+  else if (sizeof(new_block->hash) != HASH_SZ) {
+    return 0;
+  }
+  else if (sizeof(new_block->index) != sizeof(uint64_t)) {
+    return 0;
+  }
+  else if (sizeof(new_block->timestamp) != sizeof(uint64_t)) {
+    return 0;
+  }
+  else if (sizeof(new_block->record_sz) != sizeof(uint64_t)) {
+    return 0;
+  }
+  // record points to a variable length buffer
+  // so we can't check the format in that way
 
   return 1;
 
