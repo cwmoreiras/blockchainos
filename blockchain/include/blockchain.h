@@ -71,7 +71,6 @@ struct Blockchain
 //------------------------------------------------------------------------------
 {
   LinkedList *ll;
-  uint64_t length;
 
   // peek_front maps directly to LinkedList->peek_front
   void *(*peek_front)(Blockchain *this);
@@ -86,7 +85,7 @@ struct Blockchain
 
   // should these be public?
   int (*verify_block)(Block *new_block, Block *old_block);
-  int (*blockchain_verify_chain)(Blockchain *blockchain);
+  int (*verify_chain)(Blockchain *blockchain);
 
   // Can't delete blocks... returns error.  I think we can get rid of this... 
   // unless we want to stress that this is a subclass

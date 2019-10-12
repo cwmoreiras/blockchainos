@@ -58,19 +58,32 @@ void *blockchain_get(Blockchain *this, uint64_t index) {
   return this->ll->get(this->ll, index);
 }
 
-int blockchain_verify_block(Block *block, Block *prev_block) {
-  uint64_t blocksize = BLOCK_HEADER_SZ + block->record_sz;
-  uint8_t buf[blocksize];
+int blockchain_verify_block(Block *new_block, Block *old_block) {
   uint8_t hash[HASH_SZ];
 
-  util_buf_hash(buf, blocksize, hash);
+  block_hash(new_block, hash);
 
-  if (prev_block->index + 1 != block->index+1)
+  if (old_block->index+1 != new_block->index) {
+    printf("****************************\n");
+    printf("error 0\n");
+    printf("old_block index: %lu\n", old_block->index);
+    printf("new_block index: %lu\n", new_block->index);
     return 0;
-  else if (prev_block->hash != block->prevhash)
+  }
+  else if (strncmp((char *)old_block->hash, (char *)new_block->prevhash, HASH_SZ)) {
+    printf("****************************\n");
+    printf("error 1\n");
+    util_buf_print_hex(new_block->prevhash, HASH_SZ, "new_block->prevhash", 1);
+    util_buf_print_hex(old_block->hash,     HASH_SZ, "old_block->hash    ", 1);
     return 0;
-  else if (!strncmp((char *)hash, (char *)block->hash,  HASH_SZ))
+  }
+  else if (strncmp((char *)hash, (char *)new_block->hash, HASH_SZ)) {
+    printf("****************************\n");
+    printf("error 2\n");
+    util_buf_print_hex(new_block->hash, HASH_SZ, "new_block->hash", 1);
+    util_buf_print_hex(hash,            HASH_SZ, "calculated hash", 1);
     return 0;
+  }
 
   return 1;
 
@@ -78,20 +91,29 @@ int blockchain_verify_block(Block *block, Block *prev_block) {
 
 int blockchain_verify_chain(Blockchain *this) {
   uint64_t i;
-  uint64_t length = this->length;
-  uint8_t *frame;
+  uint64_t sz = this->ll->sz;
+  uint8_t *new_frame, *old_frame;
   Block old_block, new_block;
 
-  for (i = length-1; i >= 1; i--) {
-    frame = (uint8_t *) this->get(this, i);
-    blockframe_decode(frame, &new_block);
+  for (i = sz-1; i >= 1; i--) {
+    // get the i-th block
+    new_frame = (uint8_t *) this->get(this, i);
+    new_block.record = malloc((uint64_t)new_frame[RECORD_SZ_POS]);
+    blockframe_decode(new_frame, &new_block);
 
-    // get the previous one
-    frame = (uint8_t *) this->get(this, i-1);
-    blockframe_decode(frame, &old_block);
+    // get the previous block
+    old_frame = (uint8_t *) this->get(this, i-1);
+    old_block.record = malloc((uint64_t)old_frame[RECORD_SZ_POS]);
+    blockframe_decode(old_frame, &old_block);
 
-    if (!blockchain_verify_block(&new_block, &old_block))
+    if (!blockchain_verify_block(&new_block, &old_block)) {
+      free(new_block.record);
+      free(old_block.record);
       return 0;
+    }
+
+    free(new_block.record);
+    free(old_block.record);
   }
 
   return 1;
@@ -105,7 +127,6 @@ void blockchain_init(Blockchain *this)
 // -----------------------------------------------------------------------------
 {
   this->ll = malloc(sizeof(LinkedList));
-  this->length = 0;
   linkedlist_init(this->ll); // blockchain is just a fancy linkedlist
   
   // Override/map methods
@@ -114,10 +135,9 @@ void blockchain_init(Blockchain *this)
   this->peek_front = &blockchain_peek_front;
   this->get = &blockchain_get;
   this->verify_block = &blockchain_verify_block;
-
+  this->verify_chain = &blockchain_verify_chain;
 
   blockchain_root(this); // build and attach the root block
-  this->length = 1;
 }
 
 void *blockchain_peek_front(Blockchain *this)
@@ -162,17 +182,16 @@ void blockchain_insert_front(Blockchain *this,
   block.index = prev_block.index+1; // increment index
 
   memcpy(block.prevhash, prev_block.hash, HASH_SZ); // copy the prev blocks hash
-  memset(block.hash, 0, HASH_SZ); // set the hash field to 0
 
-  block_hash(&block, hash); // hash the block
+  memset(block.hash, 0, HASH_SZ); // set the hash field to 0
+  block_hash(&block, hash); 
+
   memcpy(&block.hash, hash, HASH_SZ); // copy the hash into the hash field
   block_frame(&block, buf); // frame for storage
-
-
  
   this->ll->insert_front(this->ll, buf, blocksize); // append to the chain
-  this->length++;
   free(block.record); // free the local copy
+  free(prev_block.record);
 
 }
 
@@ -298,7 +317,14 @@ void block_hash(Block *this, uint8_t *hash)
 // Retn: None
 // -----------------------------------------------------------------------------
 {
+  // do this with a temporary block so we don't corrupt data in the
+  // actual block
+  Block temp = *this;
+
+  // note that the hash field is set to all zeroes before the buffer is hashed
+  memset(&temp.hash, 0, HASH_SZ); 
+
   uint8_t buf[BLOCK_HEADER_SZ + this->record_sz]; // record size is variable
-  block_frame(this, buf);
-  util_buf_hash(buf, BLOCK_HEADER_SZ + this->record_sz, hash);
+  block_frame(&temp, buf);
+  util_buf_hash(buf, BLOCK_HEADER_SZ + temp.record_sz, hash);
 }

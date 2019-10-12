@@ -65,10 +65,9 @@ void *linkedlist_get(LinkedList *this, uint64_t index) {
   uint64_t sz = this->sz;
   uint64_t i;
 
-  Node *curr  = this->head;
-  for (i = sz; i >= index; i--) {
+  Node *curr = this->head;
+  for (i = sz; i > index; i--)
     curr = curr->prev;
-  }
 
   return curr->data; // return the data
 }

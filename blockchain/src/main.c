@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  uint8_t *blockframe;
+  // uint8_t *blockframe;
 
   uint8_t *record = (uint8_t *) "this is the second block";
   uint64_t record_sz = strlen((char *)record)+1;
@@ -118,12 +118,14 @@ int main(int argc, char *argv[]) {
   Blockchain bc;
 
   blockchain_init(&bc);
-  blockframe = (uint8_t *) bc.peek_front(&bc); // returns a framed block
-  blockframe_print(blockframe);
+  // blockframe = (uint8_t *) bc.peek_front(&bc); // returns a framed block
+  // blockframe_print(blockframe);
 
   bc.insert_front(&bc, record, record_sz);
-  blockframe = (uint8_t *) bc.peek_front(&bc); // returns a framed block
-  blockframe_print(blockframe);
+  // blockframe = (uint8_t *) bc.peek_front(&bc); // returns a framed block
+  // blockframe_print(blockframe);
+
+  printf("valid: %d\n", bc.verify_chain(&bc));
 
   blockchain_destroy(&bc);
 
