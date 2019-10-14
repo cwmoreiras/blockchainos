@@ -19,11 +19,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-#include <memory.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdint.h>
+//#define _POSIX_C_SOURCE 200809L
 
 #include "main.h"
 #include "blockchain.h"
@@ -31,64 +27,40 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include "linkedlist.h"
 #include "dynarray.h"
 
-void ll_test() {
-  LinkedList chain;
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <pthread.h>
 
-  char *s;
-  char *msg0 = "my first block will be this message";
-  size_t msg0_sz = strlen(msg0)+1;
+void *p2p_server(void *err)
+{
+  *(int *)err = 0; // this will change in case of errors
+  int sockfd, new_fd;
+  struct addrinfo hints;\struct sockaddr_storage their_addr;
+  socklen_t sin_size;
+  struct sigaction sa;
+  int yes=1;
+  char s [INET6_ADDRSTRLEN];
+  int rv;
 
-  char *msg1 = "my second block will be this message";
-  size_t msg1_sz = strlen(msg1)+1;
-
-  linkedlist_init(&chain);
-
-  chain.insert_front(&chain, msg0, msg0_sz);
-  s = (char *)chain.peek_front(&chain);
-  printf("%s\n", s);
-
-  chain.insert_front(&chain, msg1, msg1_sz);
-  s = (char *)chain.peek_front(&chain);
-  printf("%s\n", s);
-
-  chain.delete_front(&chain);
-  s = (char *)chain.peek_front(&chain);
-  printf("%s\n", s);
-
-  linkedlist_destroy(&chain);
+  pthread_exit(err);
 }
 
-void da_test() {
-  DynArray *da;
-  int valid;
-  uint8_t rv;
-  uint8_t val1, val2, val3;
-  uint64_t i;
+void *p2p_client(void *err)
+{
+  *(int *)err = 0; // this will change in case of errors
 
-  da = malloc(sizeof(struct DynArray));
-  dynarray_init(da, 2);
-
-  val1 = 10;
-  da->insert(da, val1, 0);
-
-  val2 = 20;
-  da->insert(da, val2, 1);
-
-  val3 = 30;
-  da->insert(da, val3, 2);
-
-  da->remove(da, 1, &valid);
-
-  for (i = 0; i < da->sz; i++) {
-    rv = da->get(da, i, &valid);
-    printf("i:%ld , val:%d\n",i, rv);
-  }
-
-  dynarray_destroy(da);
-  free(da);
+  pthread_exit(err);
 }
-
-// should i encapsulate node in linkedlist?
 
 int main(int argc, char *argv[]) {
 
@@ -106,33 +78,40 @@ int main(int argc, char *argv[]) {
     else {
       printf("Command line argument is malformed\n");
     }
-    
     return 0;
   }
 
-  // uint8_t *blockframe;
+  pthread_t p2p_server_thread, p2p_client_thread;
+  int serv_res, cli_res;
+  void *serv_err = 0, *cli_err = 0;
 
-  uint8_t *record = (uint8_t *) "this is the second block";
-  uint64_t record_sz = strlen((char *)record)+1;
+  if (pthread_create(&p2p_server_thread, NULL, p2p_server, &serv_res)) {
+    fprintf(stderr, "Error creating p2p_server thread\n");
+  }
+  if (pthread_create(&p2p_client_thread, NULL, p2p_client, &cli_res)) {
+    fprintf(stderr, "Error creating client thread\n");
+  }
 
-  Blockchain bc;
+  if (pthread_join(p2p_server_thread, &serv_err)) {
+    fprintf(stderr, "Error joining p2p_client thread\n");
+  }
+  if (pthread_join(p2p_client_thread, &cli_err)) {
+    fprintf(stderr, "Error joining p2p_client thread\n");
+  }
+  
+  if (!(*(int *)serv_err)) {
+    printf("%d\n", serv_res);
+  }
+  else {
+    fprintf(stderr, "Error code in p2p_server thread return\n");
+  }
 
-  blockchain_init(&bc);
-  // blockframe = (uint8_t *) bc.peek_front(&bc); // returns a framed block
-  // blockframe_print(blockframe);
-
-  bc.insert_front(&bc, record, record_sz);
-  // blockframe = (uint8_t *) bc.peek_front(&bc); // returns a framed block
-  // blockframe_print(blockframe);
-
-  printf("valid: %d\n", bc.verify_chain(&bc));
-
-  blockchain_destroy(&bc);
-
-  // LinkedList ll;
-  // linkedlist_init(&ll);
-  // ll.append(&ll, record, record_sz);
-  // linkedlist_destroy(&ll);
+  if (!(*(int *)cli_err)) {
+    printf("%d\n", cli_res);
+  }
+  else {
+    fprintf(stderr, "Error code in p2p_client thread return\n");
+  }
 
   return 0;
 }

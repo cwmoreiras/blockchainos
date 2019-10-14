@@ -41,6 +41,7 @@ void *blockchain_get(Blockchain *this, uint64_t index);
 // Blockchain functions
 int blockchain_verify_block(Block *new_block, Block *old_block);
 int blockchain_verify_chain(Blockchain *this);
+void blockchain_replace(Blockchain *this, Blockchain *new);
 void blockchain_root(Blockchain *this);
 // Block functions
 void block_hash(Block *this, uint8_t *hash);
@@ -52,6 +53,19 @@ void blockframe_print(uint8_t *this);
 //-----------------//
 // IMPLEMENTATIONS //
 //-----------------//
+
+void blockchain_replace(Blockchain *this, Blockchain *new) {
+  if (blockchain_verify_chain(this) && new->ll->sz > this->ll->sz) {
+    printf("Received block is valid. Replacing current blockchain with the new one\n");
+    this = new;
+
+    // TODO need to broadcast change to other blocks
+
+  }
+  else {
+    printf("Received blockchain was invalid\n");
+  }
+}
 
 // wrapper for the linked list implementation of get
 void *blockchain_get(Blockchain *this, uint64_t index) {
@@ -111,6 +125,8 @@ int blockchain_verify_chain(Blockchain *this) {
   uint64_t sz = this->ll->sz;
   uint8_t *new_frame, *old_frame;
   Block old_block, new_block;
+
+  // need a special case to validate the genesis block
 
   for (i = sz-1; i >= 1; i--) {
     // get the i-th block

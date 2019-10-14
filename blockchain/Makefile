@@ -7,9 +7,9 @@ SRC = $(wildcard $(SRC_DIR)/*.c)
 OBJ = $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
 CPPFLAGS += -Iinclude
-CFLAGS += -Wall -Wextra -pedantic -g
+CFLAGS += -Wall -Wextra -pedantic -g -std=gnu11
 LDFLAGS += -Llib
-LDLIBS += -lm -lssl -lcrypto
+LDLIBS += -lm -lssl -lcrypto -pthread
 
 .PHONY: all clean
 
