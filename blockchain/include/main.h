@@ -22,4 +22,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #ifndef MAIN_H
 #define MAIN_H
 
+#define _POSIX_C_SOURCE 200809L
+#define SERV_PORT       "6666"
+#define SERV_BACKLOG    10
+
 #endif
