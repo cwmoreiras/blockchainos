@@ -12,12 +12,18 @@ blockchain - source code for the blockchain
 node - client code
 
 ## dependencies
-Install OpenSSL:
+OpenSSL
+LibEv
+
+Install Dependencies:
 ```
 sudo apt install libssl-dev
+sudo apt install libev-dev
 ```
 
 ## sources
+* http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod
+* https://beej.us/guide/bgnet/html/single/bgnet.html#simpleserver
 * https://medium.com/@lhartikk/a-blockchain-in-200-lines-of-code-963cc1cc0e54
 * https://github.com/B-Con/crypto-algorithms/blob/master/sha256.h
 * https://github.com/B-Con/crypto-algorithms/blob/master/sha256.c
