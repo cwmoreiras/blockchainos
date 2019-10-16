@@ -22,6 +22,7 @@ sudo apt install libev-dev
 ```
 
 ## sources
+* http://cs.berry.edu/~nhamid/p2p/
 * http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod
 * https://beej.us/guide/bgnet/html/single/bgnet.html#simpleserver
 * https://medium.com/@lhartikk/a-blockchain-in-200-lines-of-code-963cc1cc0e54
