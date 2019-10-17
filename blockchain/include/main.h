@@ -26,15 +26,36 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <arpa/inet.h> // definition of struct sockaddr
 
-#define SERV_PORT       "51218" // this has to be configurable
-#define SERV_BACKLOG    10
+#define LISTEN_PORT             "51218" // this has to be configurable
+#define SERV_BACKLOG            100
+#define MAX_CONCURRENT_REQUESTS 100
 
-const int test_data = 101;
+typedef struct {
+    int id;
+    int sock;
+} ThreadData;
 
+// NOTE: this is a global variable!!
+int p2p_thread_table[MAX_CONCURRENT_REQUESTS]; // global thread table
+pthread_t p2p_request[MAX_CONCURRENT_REQUESTS];
+
+// startup routines
+int startup(int argc, char *argv[]);
+int process_cmd_args(int argc, char *argv[]); 
+
+// signal handling
+int global_sig_attach(void);
 void sigint_handler(int s); // still need to implement SIGINT handler
 void sigchld_handler(int s);
+
+// networking
+int get_listener_socket();
 void *get_in_addr(struct sockaddr *sa);
-void *p2p_server(void *err);
-void *p2p_client(void *err);
+void *p2p_request_handler(int *threadIndex);
+// void *p2p_client(void *err);
+
+// threading
+void p2p_request_cleanup(int *arg);
+int p2p_get_thread_index(int *table, int sz);
 
 #endif
