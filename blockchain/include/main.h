@@ -25,6 +25,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #define _POSIX_C_SOURCE 200809L // must be defined first to keep vscode happy
 
 #include <arpa/inet.h> // definition of struct sockaddr
+#include <ev.h>
 
 #define LISTEN_PORT             "51218" // this has to be configurable
 #define SERV_BACKLOG            100
@@ -34,11 +35,12 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // or 0 if that thread is inactive. The socket table stores the file descriptor
 // that that thread is using for its connection to the client. request
 typedef struct {
-    pthread_mutex_t lock;
     int status;
     int sock;
     int id;
-} ThreadData;
+} ClientData;
+
+ClientData cd_table[MAX_CONCURRENT_REQUESTS]; 
 
 // startup routines
 int startup(int argc, char *argv[]);
@@ -49,14 +51,15 @@ int global_sig_attach(void);
 void sigint_handler(int s); // still need to implement SIGINT handler
 void sigchld_handler(int s);
 
+// event callbacks
+void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents);
+void read_cb(struct ev_loop *loop, ev_io *watcher, int revents);
+
+
 // networking
 int get_listener_socket();
 void *get_in_addr(struct sockaddr *sa);
 void *request_handler(void *arg);
 // void *client(void *err);
-
-// threading
-void request_cleanup(void *arg);
-int get_thread_index(ThreadData *thread_list, int sz);
 
 #endif
