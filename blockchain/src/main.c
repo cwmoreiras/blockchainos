@@ -48,21 +48,26 @@ int main(int argc, char *argv[])
 // Retn: 0 unless there is an error
 // -----------------------------------------------------------------------------
 {
+  // threading variables
+  ThreadData thread_table[MAX_CONCURRENT_REQUESTS];
+  pthread_t request[MAX_CONCURRENT_REQUESTS];
+  pthread_mutex_t table_lock = PTHREAD_MUTEX_INITIALIZER;
+  int tid;
+
   // networking variables
-  int lsock, csock;
+  int lsock;
   struct sockaddr_storage their_addr;
-  socklen_t sin_size;
+  socklen_t sin_size = sizeof their_addr;
   char s [INET6_ADDRSTRLEN];
   
   int serv_res;
   void *serv_err = 0;
-  int threadIndex;
 
   startup(argc, argv); // handles command line arguments, print license logic
   global_sig_attach(); // attach all signal handlers
 
-  memset(p2p_request, 0, sizeof p2p_request);
-  memset(p2p_request, 0, sizeof p2p_thread_table);
+  memset(request, 0, sizeof request);
+  memset(&thread_table, 0, sizeof thread_table);
 
   lsock = get_listener_socket(LISTEN_PORT); // get a listener socket 
   if (lsock == -1) {
@@ -77,42 +82,61 @@ int main(int argc, char *argv[])
   printf("main: waiting for connections...\n");
 
   while (1) {
-    sin_size = sizeof their_addr;
-    csock = accept(lsock, (struct sockaddr *)&their_addr, &sin_size);
-    if (csock == -1) {
-      perror("p2p_server accept");
-      continue;
+    pthread_mutex_lock(&table_lock); // lock this section
+    {
+      tid = get_thread_index(thread_table, MAX_CONCURRENT_REQUESTS); // find first free slot
+      thread_table[tid].status = 1; // set the thread status of that slot active
+      thread_table[tid].id = tid; // set the thread id of that slot
+
+      // dont unlock yet, we need tid to be the same when a connection is accepted
+      // however, this means the table can't be unlocked until after a connection is made
+      thread_table[tid].sock = accept(lsock, (struct sockaddr *)&their_addr, &sin_size);
+      if (thread_table[tid].sock == -1) {
+        perror("server accept");
+        continue;
+      }
+
+      inet_ntop(their_addr.ss_family,
+        get_in_addr((struct sockaddr *)&their_addr),
+        s, sizeof s);
+      printf("server: got connection from %s\n", s);
+
+      // create a thread to handle this request, with the thread table entry as an
+      // argument. this will allow the thread to clean up after itself when its done
+      if (pthread_create(&request[tid], NULL, request_handler, &thread_table[tid])) {
+        fprintf(stderr, "Error creating server thread\n");
+      }
     }
-
-    inet_ntop(their_addr.ss_family,
-      get_in_addr((struct sockaddr *)&their_addr),
-      s, sizeof s);
-    printf("p2p_server: got connection from %s\n", s);
-
-    // assigning index this way allows us to access all threads (unlike stack)
-    // and always assign to the lowest available table slot
-    // this line presents a race condition
-    threadIndex = p2p_get_thread_index(p2p_thread_table, MAX_CONCURRENT_REQUESTS);    
-
-    // TODO multithreaded server
-    if (pthread_create(&p2p_request[threadIndex], NULL, p2p_request_handler, &threadIndex)) {
-      fprintf(stderr, "Error creating p2p_server thread\n");
-    }
+    pthread_mutex_unlock(&table_lock); // unlock this section
     
   }
   
   // check error codes from joined threads
   if (!(*(int *)serv_err)) {
-    printf("p2p_server exit code: %d\n", serv_res);
+    printf("server exit code: %d\n", serv_res);
   }
   else {
-    fprintf(stderr, "Error code in p2p_server thread return\n");
+    fprintf(stderr, "Error code in server thread return\n");
   }
 
   return 0;
 }
 
-void *p2p_request_handler(int *threadIndex)
+int get_thread_index(ThreadData *thread_list, int sz) {
+  int i;
+
+  for (i = 0; i < sz; i++) {
+    if(thread_list[i].status == 0) {
+      return i;
+    }
+
+  }
+
+  return -1;
+}
+
+
+void *request_handler(void *arg)
 // -----------------------------------------------------------------------------
 // Func: server thread of peer to peer service. This thread handles all incoming 
 //       data from the connected peers, and responds to queries. It also
@@ -122,17 +146,17 @@ void *p2p_request_handler(int *threadIndex)
 // Retn: *(int *)err will be zero unless there has been a fault
 // -----------------------------------------------------------------------------
 {
-  pthread_cleanup_push(p2p_request_cleanup, NULL);  
-  p2p_thread_table[*threadIndex] = 1;
+  int sock = *(int *)arg;
+  pthread_cleanup_push(request_cleanup, NULL);  
 
 
   pthread_cleanup_pop(1); // run the thread cleanup routine
   pthread_exit(0);
 }
 
-void p2p_request_cleanup(int *threadIndex) {
+void request_cleanup(void *arg) {
   // empty that slot in the thread table
-  p2p_thread_table[*threadIndex] = 0;
+  //thread_table[*threadIndex] = 0;
 
 }
 
@@ -147,24 +171,24 @@ int get_listener_socket(const char *port) {
   hints.ai_flags = AI_PASSIVE;
 
   if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
-    fprintf(stderr, " p2p_server getaddrinfo: %s\n", gai_strerror(rv));
+    fprintf(stderr, " server getaddrinfo: %s\n", gai_strerror(rv));
     return -1;
   }
 
   for (p = servinfo; p != NULL; p = p->ai_next) {
     if ((lsock = socket(p->ai_family, p->ai_socktype, 
       p->ai_protocol)) == -1) {
-        perror("p2p_server: socket");
+        perror("server: socket");
         continue;
     }
     if (setsockopt(lsock, SOL_SOCKET, SO_REUSEADDR, &yes, 
       sizeof(int)) == -1) {
-        perror("p2p_server setsockopt");
+        perror("server setsockopt");
         return -1;
     }
     if (bind(lsock, p->ai_addr, p->ai_addrlen) == -1) {
       close(lsock);
-      perror("p2p_server: bind");
+      perror("server: bind");
       continue;
     }
     break;
@@ -172,24 +196,11 @@ int get_listener_socket(const char *port) {
   freeaddrinfo(servinfo);
   
   if (p == NULL) {
-    fprintf(stderr, "p2p_server: failed to bind\n");
+    fprintf(stderr, "server: failed to bind\n");
     return -1;
   }
 
   return lsock;
-}
-
-int p2p_get_thread_index(int *table, int sz) {
-  int i;
-
-  for (i = 0; i < sz; i++) {
-    if(table[i] == 0) {
-      return i;
-    }
-
-  }
-
-  return -1;
 }
 
 void *get_in_addr(struct sockaddr *sa) 
@@ -201,7 +212,7 @@ void *get_in_addr(struct sockaddr *sa)
 
 int global_sig_attach(void) {
   struct sigaction child_action;
-  struct sigaction int_action; // normal way to shut down server
+  //struct sigaction int_action; // normal way to shut down server
 
   // right now we're not multiprocessing
   child_action.sa_handler = sigchld_handler; // bury zombie processes
@@ -243,7 +254,7 @@ void sigchld_handler(int s)
 }
 
 /*
-void *p2p_client(void *err)
+void *client(void *err)
 // -----------------------------------------------------------------------------
 // Func: client thread of peer to peer service. This thread queries new
 //       connections for their latest block. If the response is a block with a 
@@ -268,7 +279,7 @@ void *p2p_client(void *err)
   // TODO server hostname is currently hardcoded as "server" in 
   // first argument
   if ((rv = getaddrinfo("localhost", port, &hints, &servinfo)) != 0) {
-    fprintf(stderr, "p2p_client getaddrinfo: %s\n", gai_strerror(rv));
+    fprintf(stderr, "client getaddrinfo: %s\n", gai_strerror(rv));
     *(int *)err = 1;
     pthread_exit(err);
   }
@@ -276,38 +287,38 @@ void *p2p_client(void *err)
   for (p = servinfo; p != NULL; p = p->ai_next) {
     if ((sockfd = socket(p->ai_family, p->ai_socktype,
       p->ai_protocol)) == -1) {
-        perror("p2p_client: socket");
+        perror("client: socket");
         continue;
       }
 
     if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
       close(sockfd);
-      perror("p2p_client: connect");
+      perror("client: connect");
       continue;
     }
     break;
   }
 
   if (p == NULL) {
-    fprintf(stderr, "p2p_client: failed to connect\n");
+    fprintf(stderr, "client: failed to connect\n");
     *(int *)err = 2;
     pthread_exit(err);
   }
 
   inet_ntop(p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr),
     s, sizeof s);
-  printf("p2p_client: connecting to %s\n", s);
+  printf("client: connecting to %s\n", s);
 
   freeaddrinfo(servinfo);
 
   if ((numbytes = recv(sockfd, buf, 100-1, 0)) == -1) {
-    perror("p2p_client recv");
+    perror("client recv");
     exit(1); // fatal
   }
 
   buf[numbytes] = '\0';
 
-  printf("p2p_client: received'%s'\n", buf);
+  printf("client: received'%s'\n", buf);
   close(sockfd);
 
 

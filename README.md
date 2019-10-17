@@ -9,8 +9,6 @@ blockchain - source code for the blockchain
 * blockchain/src
 * Makefile
 
-node - client code
-
 ## dependencies
 OpenSSL
 LibEv

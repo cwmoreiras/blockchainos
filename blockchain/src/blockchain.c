@@ -114,7 +114,7 @@ int blockchain_verify_block(Block *new_block, Block *old_block) {
     return 0;
   }
   // record points to a variable length buffer
-  // so we can't check the format in that way
+  // so we can't check the format by checking the length
 
   return 1;
 
