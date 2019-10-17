@@ -28,8 +28,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <ev.h>
 
 #define LISTEN_PORT             "51218" // this has to be configurable
-#define SERV_BACKLOG            100
-#define MAX_CONCURRENT_REQUESTS 100
+#define SERV_BACKLOG            10
+#define MAX_CONCURRENT_REQUESTS 10
 
 // at a given index, the activity table will store a 1 if that thread is active
 // or 0 if that thread is inactive. The socket table stores the file descriptor

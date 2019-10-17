@@ -51,6 +51,7 @@ int main(int argc, char *argv[])
 
   // event handling variables
   struct ev_loop *listen_loop = EV_DEFAULT;
+  struct ev_loop *client_loop[MAX_CONCURRENT_REQUESTS];
   ev_io accept_watcher;
   ev_io read_watcher;
 
@@ -78,7 +79,7 @@ int main(int argc, char *argv[])
   // Initialize and start 
   for (i = 0; i < MAX_CONCURRENT_REQUESTS; i++) {
     ev_io_init(&read_watcher, read_cb, cd_table[i].sock, EV_READ);
-    ev_io_start(loop, &read_watcher);
+    ev_io_start(client_loop[i], &read_watcher);
   }
 
   printf("main: waiting for connections...\n");
