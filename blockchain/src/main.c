@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 // Retn: 0 unless there is an error
 // -----------------------------------------------------------------------------
 {
-  int i;
+  ClientIO cio_table[MAX_CONCURRENT_REQUESTS];
 
   // event handling variables
   struct ev_loop *mainloop = EV_DEFAULT;
@@ -73,11 +73,12 @@ int main(int argc, char *argv[])
     perror("main listen");
     return -1;
   }
+
+  accept_watcher.data = &cio_table; // give the listener callback access to client table
   // Initialize and start a watcher to accept client requests
   // attach function accept_cb as the callback with the listen socket as an arg
   ev_io_init(&accept_watcher, accept_cb, lsock, EV_READ);
   ev_io_start(mainloop, &accept_watcher);
-
 
   printf("Started server event loop\n");
   ev_run(mainloop, 0); // run listener callback under main event loop
@@ -93,6 +94,7 @@ void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
   char s [INET6_ADDRSTRLEN];
   int index;
   ev_io *read_watcher;
+  ClientIO *cio_table = watcher->data;
 
   if (EV_ERROR & revents) {
     perror("got invalid listener event");

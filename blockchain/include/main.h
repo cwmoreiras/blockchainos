@@ -41,9 +41,6 @@ typedef struct {
     int id;
 } ClientIO;
 
-// globals
-ClientIO cio_table[MAX_CONCURRENT_REQUESTS]; 
-
 // startup routines
 int startup(int argc, char *argv[]);
 int process_cmd_args(int argc, char *argv[]); 
