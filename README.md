@@ -20,7 +20,7 @@ sudo apt install libev-dev
 ```
 
 ## sources
-* https://linux.die.net/man/3/ev (libev documentation)
+* https://metacpan.org/pod/distribution/EV/libev/ev.pod (libev documentation)
 * http://cs.berry.edu/~nhamid/p2p/ (p2p programming)
 * http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod (libev documentation)
 * https://beej.us/guide/bgnet/html/single/bgnet.html#simpleserver (c network programming)

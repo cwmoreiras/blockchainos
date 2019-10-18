@@ -38,6 +38,8 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <sys/wait.h>
 #include <signal.h>
 #include <ev.h>
+#include <pthread.h>
+#include <fcntl.h>
 
 int main(int argc, char *argv[]) 
 // -----------------------------------------------------------------------------
@@ -50,16 +52,17 @@ int main(int argc, char *argv[])
   int i;
 
   // event handling variables
-  struct ev_loop *listen_loop = EV_DEFAULT;
-  struct ev_loop *client_loop[MAX_CONCURRENT_REQUESTS];
+  struct ev_loop *mainloop = EV_DEFAULT;
   ev_io accept_watcher;
-  ev_io read_watcher;
 
   // networking variables
   int lsock;
 
   startup(argc, argv); // handles command line arguments, print license logic
   global_sig_attach(); // attach all signal handlers
+
+  memset(cio_table, 0, sizeof cio_table); // is this right?
+  printf("%d\n", sizeof cio_table);
 
   lsock = get_listener_socket(LISTEN_PORT); // get a listener socket 
   if (lsock == -1) {
@@ -74,56 +77,85 @@ int main(int argc, char *argv[])
   // Initialize and start a watcher to accept client requests
   // attach function accept_cb as the callback with the listen socket as an arg
   ev_io_init(&accept_watcher, accept_cb, lsock, EV_READ);
-  ev_io_start(listen_loop, &accept_watcher);
+  ev_io_start(mainloop, &accept_watcher);
 
-  // Initialize and start 
-  for (i = 0; i < MAX_CONCURRENT_REQUESTS; i++) {
-    ev_io_init(&read_watcher, read_cb, cd_table[i].sock, EV_READ);
-    ev_io_start(client_loop[i], &read_watcher);
-  }
 
-  printf("main: waiting for connections...\n");
-  ev_run(listen_loop, 0);
-
+  printf("Started server event loop\n");
+  ev_run(mainloop, 0); // run listener callback under main event loop
 
   return 0;
 }
 
+// event-driven wrapper for accept
+// ensures that we're not blocked on the accept call
 void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
   struct sockaddr_storage their_addr;
   socklen_t sin_size = sizeof their_addr;
   char s [INET6_ADDRSTRLEN];
-  int cli_index;
+  int index;
+  ev_io *read_watcher;
 
   if (EV_ERROR & revents) {
     perror("got invalid listener event");
     return;
   }
 
-  cli_index = get_client_index(cd_table, MAX_CONCURRENT_REQUESTS);
+  // find the lowest usable index for this client's entry in the
+  // client table
+  index = get_client_id(cio_table, MAX_CONCURRENT_REQUESTS);
 
-  cd_table[cli_index].sock = accept(watcher->fd, (struct sockaddr *)&their_addr, &sin_size);
-  if (cd_table[cli_index].sock == -1) {
+  cio_table[index].status = 1;
+  cio_table[index].sock = accept(watcher->fd, (struct sockaddr *)&their_addr, &sin_size);
+  // fcntl(cio_table[index].sock, F_SETFL, O_NONBLOCK)
+  fcntl(cio_table[index].sock, 4, 04000);
+  
+  if (cio_table[index].sock == -1) {
     perror("accept_cb");
     return;
   }
+  cio_table[index].id = index;
 
   inet_ntop(their_addr.ss_family,
     get_in_addr((struct sockaddr *)&their_addr),
     s, sizeof s);
-  printf("server: got connection from %s\n", s);
+  printf("server: accepted connection from %s\n", s);
 
+  // these will have to be freed in the read callback
+  read_watcher = malloc(sizeof(ev_io));
+  read_watcher->data = malloc(sizeof(ClientIO));
+
+  read_watcher->data = &cio_table[index]; // so that callback can access client info through watcher
+  
+  ev_io_init(read_watcher, read_cb, cio_table[index].sock, EV_READ);
+  ev_io_start(loop, read_watcher); // add it to this loop
 }
 
 void read_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
-  
+  ClientIO *cio = (ClientIO *)watcher->data; // get all the info on this client
+
+  printf("read callback\n");
+  printf("status: %d\n", cio->status);
+  printf("sock: %d\n", cio->sock);
+  printf("id: %d\n", cio->id);
+
+  // TODO do stuff here
+  // depending on what type of request has been made, we may have to do 
+  // some different things
+  char buf[100];
+  read(cio->sock, buf, 100);
+  printf("%s\n", buf);
+
+  // cleanup
+  close(cio->sock);
+  cio->id = 0;
+  cio->status = 0;
 }
 
-int get_client_index(ClientData *cd_table, int sz) {
+int get_client_id(ClientIO *cio_table, int sz) {
   int i;
 
   for (i = 0; i < sz; i++) {
-    if(cd_table[i].status == 0) {
+    if(cio_table[i].status == 0) {
       return i;
     }
 
@@ -153,6 +185,11 @@ int get_listener_socket(const char *port) {
         perror("server: socket");
         continue;
     }
+
+    // fcntl(lsock, F_SETFL, O_NONBLOCK)
+    // TODO is this not portable?
+    fcntl(lsock, 4, 04000);
+
     if (setsockopt(lsock, SOL_SOCKET, SO_REUSEADDR, &yes, 
       sizeof(int)) == -1) {
         perror("server setsockopt");

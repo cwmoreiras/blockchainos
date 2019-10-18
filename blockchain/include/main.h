@@ -26,6 +26,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #include <arpa/inet.h> // definition of struct sockaddr
 #include <ev.h>
+#include <pthread.h>
 
 #define LISTEN_PORT             "51218" // this has to be configurable
 #define SERV_BACKLOG            10
@@ -38,9 +39,11 @@ typedef struct {
     int status;
     int sock;
     int id;
-} ClientData;
+} ClientIO;
 
-ClientData cd_table[MAX_CONCURRENT_REQUESTS]; 
+// globals
+ClientIO cio_table[MAX_CONCURRENT_REQUESTS]; 
+pthread_t workers[MAX_CONCURRENT_REQUESTS];
 
 // startup routines
 int startup(int argc, char *argv[]);
@@ -57,6 +60,7 @@ void read_cb(struct ev_loop *loop, ev_io *watcher, int revents);
 
 
 // networking
+int get_client_id(ClientIO *cio_table, int sz);
 int get_listener_socket();
 void *get_in_addr(struct sockaddr *sa);
 void *request_handler(void *arg);
