@@ -61,8 +61,7 @@ int main(int argc, char *argv[])
   startup(argc, argv); // handles command line arguments, print license logic
   global_sig_attach(); // attach all signal handlers
 
-  memset(cio_table, 0, sizeof cio_table); // is this right?
-  printf("%d\n", sizeof cio_table);
+  memset(cio_table, 0, sizeof cio_table);
 
   lsock = get_listener_socket(LISTEN_PORT); // get a listener socket 
   if (lsock == -1) {
@@ -122,8 +121,6 @@ void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
 
   // these will have to be freed in the read callback
   read_watcher = malloc(sizeof(ev_io));
-  read_watcher->data = malloc(sizeof(ClientIO));
-
   read_watcher->data = &cio_table[index]; // so that callback can access client info through watcher
   
   ev_io_init(read_watcher, read_cb, cio_table[index].sock, EV_READ);
@@ -133,22 +130,21 @@ void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
 void read_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
   ClientIO *cio = (ClientIO *)watcher->data; // get all the info on this client
 
-  printf("read callback\n");
-  printf("status: %d\n", cio->status);
-  printf("sock: %d\n", cio->sock);
-  printf("id: %d\n", cio->id);
-
   // TODO do stuff here
   // depending on what type of request has been made, we may have to do 
   // some different things
   char buf[100];
   read(cio->sock, buf, 100);
-  printf("%s\n", buf);
+  printf("%s", buf);
 
   // cleanup
   close(cio->sock);
   cio->id = 0;
   cio->status = 0;
+
+  ev_io_stop(loop, watcher); 
+  free(watcher);
+  printf("server: Disconnected peer\n");
 }
 
 int get_client_id(ClientIO *cio_table, int sz) {
