@@ -136,6 +136,12 @@ void read_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
   // depending on what type of request has been made, we may have to do 
   // some different things
   char buf[100];
+
+  if (EV_ERROR & revents) {
+    perror("got invalid client event");
+    return;
+  }
+
   read(cio->sock, buf, 100);
   printf("%s", buf);
 
@@ -184,8 +190,8 @@ int get_listener_socket(const char *port) {
         continue;
     }
 
-    // fcntl(lsock, F_SETFL, O_NONBLOCK)
     // TODO is this not portable?
+    // fcntl(lsock, F_SETFL, O_NONBLOCK)
     fcntl(lsock, 4, 04000);
 
     if (setsockopt(lsock, SOL_SOCKET, SO_REUSEADDR, &yes, 
