@@ -28,13 +28,15 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <ev.h>
 #include <pthread.h>
 
-#define LISTEN_PORT             "51221" // this has to be configurable
+#define LISTEN_PORT             "51222" // this has to be configurable
 #define SERV_BACKLOG            10
 #define MAX_CONCURRENT_REQUESTS 10
+#define MAIN_SHUTDOWN           'x'
 
-// at a given index, the activity table will store a 1 if that thread is active
-// or 0 if that thread is inactive. The socket table stores the file descriptor
-// that that thread is using for its connection to the client. request
+// global variables
+int sig_pipe[2]; // used in shutdown routine
+
+
 typedef struct {
     int status;
     int sock;
@@ -53,6 +55,7 @@ void sigchld_handler(int s);
 // event callbacks
 void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents);
 void read_cb(struct ev_loop *loop, ev_io *watcher, int revents);
+void sigint_cb(struct ev_loop *loop, ev_io *watcher, int revents);
 
 
 // networking

@@ -50,13 +50,18 @@ int main(int argc, char *argv[])
 // -----------------------------------------------------------------------------
 {
   ClientIO cio_table[MAX_CONCURRENT_REQUESTS];
-
   // event handling variables
   struct ev_loop *mainloop = EV_DEFAULT;
   ev_io accept_watcher;
-
+  ev_io sigint_watcher;
   // networking variables
   int lsock;
+
+  // set up pipe between sigint handler and main thread
+  if (pipe(sig_pipe) == -1) {
+    perror("main pipe");
+    return -1;
+  }
 
   startup(argc, argv); // handles command line arguments, print license logic
   global_sig_attach(); // attach all signal handlers
@@ -80,15 +85,47 @@ int main(int argc, char *argv[])
   ev_io_init(&accept_watcher, accept_cb, lsock, EV_READ);
   ev_io_start(mainloop, &accept_watcher);
 
+  ev_io_init(&sigint_watcher, sigint_cb, sig_pipe[0], EV_READ);
+  ev_io_start(mainloop, &sigint_watcher);
+
   printf("Started server event loop\n");
   ev_run(mainloop, 0); // run listener callback under main event loop
 
   return 0;
 }
 
+void sigint_cb(struct ev_loop *loop, ev_io *watcher, int revents)
+{
+  // sigint has been received, need to clean things up
+  // TODO clean shutdown routine
+  // https://stackoverflow.com/questions/9681531/graceful-shutdown-server-socket-in-linux
+  // https://stackoverflow.com/questions/11487900/best-pratice-to-free-allocated-memory-on-sigint
+  /*
+  1. prevent accept from adding more clients
+  2. use a list of open sockets to know when a socket is properly closed
+      - use shutdown to tell client im closing the socket 
+      - call read for a while to make sure that all the client data has been received
+      - use close to free each client socket 
+  3. close the listen socket
+  
+  use a timeout to make sure idle connections wont last forever
+
+
+
+  */
+
+  if (EV_ERROR & revents) {
+    perror("got invalid listener event");
+    return;
+  }
+
+  exit(0);
+}
+
 // event-driven wrapper for accept
 // ensures that we're not blocked on the accept call
-void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
+void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents) 
+{
   struct sockaddr_storage their_addr;
   socklen_t sin_size = sizeof their_addr;
   char s [INET6_ADDRSTRLEN];
@@ -106,7 +143,8 @@ void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
   index = get_client_id(cio_table, MAX_CONCURRENT_REQUESTS);
 
   cio_table[index].status = 1;
-  cio_table[index].sock = accept(watcher->fd, (struct sockaddr *)&their_addr, &sin_size);
+  cio_table[index].sock = accept4(watcher->fd, (struct sockaddr *)&their_addr, 
+        &sin_size, SOCK_CLOEXEC);
   // fcntl(cio_table[index].sock, F_SETFL, O_NONBLOCK)
   fcntl(cio_table[index].sock, 4, 04000);
   
@@ -129,7 +167,8 @@ void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
   ev_io_start(loop, read_watcher); // add it to this loop
 }
 
-void read_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
+void read_cb(struct ev_loop *loop, ev_io *watcher, int revents) 
+{
   ClientIO *cio = (ClientIO *)watcher->data; // get all the info on this client
 
   // TODO do stuff here
@@ -155,7 +194,8 @@ void read_cb(struct ev_loop *loop, ev_io *watcher, int revents) {
   printf("server: Disconnected peer\n");
 }
 
-int get_client_id(ClientIO *cio_table, int sz) {
+int get_client_id(ClientIO *cio_table, int sz) 
+{
   int i;
 
   for (i = 0; i < sz; i++) {
@@ -168,7 +208,8 @@ int get_client_id(ClientIO *cio_table, int sz) {
   return -1;
 }
 
-int get_listener_socket(const char *port) {
+int get_listener_socket(const char *port) 
+{
   struct addrinfo hints, *servinfo, *p;
   int rv;
   int lsock;
@@ -224,20 +265,10 @@ void *get_in_addr(struct sockaddr *sa)
 }
 
 int global_sig_attach(void) {
-  struct sigaction child_action;
-  //struct sigaction int_action; // normal way to shut down server
-
-  // right now we're not multiprocessing
-  child_action.sa_handler = sigchld_handler; // bury zombie processes
-  sigemptyset(&child_action.sa_mask);
-  child_action.sa_flags = SA_RESTART;
-  if (sigaction(SIGCHLD, &child_action, NULL) == -1) {
-    perror("sigaction SIGCHLD");
-    return -1;
-  } 
+  struct sigaction int_action; // normal way to shut down server
 
   // TODO sigint should be normal way to shut down cleanly
-  /*
+  
   int_action.sa_handler = sigint_handler;
   sigemptyset(&int_action.sa_mask);
   int_action.sa_flags = SA_RESTART;
@@ -245,14 +276,17 @@ int global_sig_attach(void) {
     perror("sigaction SIGINT");
     return -1;
   }
-  */
+  
   return 0;
 
 }
 
-void sigint_handler(int s) { // program shuts down nicely when sigint is received 
-  s = s; // suppress compiler warning
-  // TODO clean shutdown routine
+void sigint_handler(int s) 
+{ // program shuts down nicely when sigint is received 
+  char tmp = MAIN_SHUTDOWN;
+  if (write(sig_pipe[1], &tmp, 1)) {
+    perror("sigint_handler write");
+  }
 }
 
 void sigchld_handler(int s)
@@ -277,7 +311,8 @@ int startup(int argc, char *argv[])
   return 0;
 }
 
-int process_cmd_args(int argc, char *argv[]) {
+int process_cmd_args(int argc, char *argv[]) 
+{
   // check command line arguments
   // right now, if the argument is -h then argv[1][1] will be hashed
   // and the program will exit (for testing hashing)
