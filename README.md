@@ -20,6 +20,7 @@ sudo apt install libev-dev
 ```
 
 ## sources
+* https://tools.ietf.org/html/rfc6544 (TCP Candidates with Interactive Connectivity Establisment [ICE])
 * https://metacpan.org/pod/distribution/EV/libev/ev.pod (libev documentation)
 * http://cs.berry.edu/~nhamid/p2p/ (p2p programming)
 * http://pod.tst.eu/http://cvs.schmorp.de/libev/ev.pod (libev documentation)
