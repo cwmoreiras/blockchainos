@@ -60,8 +60,6 @@ int main(int argc, char *argv[])
 // Retn: 0 unless there is an error
 // -----------------------------------------------------------------------------
 {
-  int i;
-  ClientIO cio[MAX_CONCURRENT_REQUESTS];
   SockData sock_data;
   // event handling variables
   struct ev_loop *mainloop = EV_DEFAULT;
@@ -79,8 +77,6 @@ int main(int argc, char *argv[])
   main_startup(argc, argv); // handles command line arguments, print license logic
   sig_attach_handler(); // attach all signal handlers
 
-  memset(cio, 0, sizeof cio);
-
   lsock = net_get_listener_socket(LISTEN_PORT); // get a listener socket 
   if (lsock == -1) {
     perror("main get_listener_socket");
@@ -89,16 +85,15 @@ int main(int argc, char *argv[])
 
   // event loop will need all the socket information so that it can
   // cleanly shut down the server
+  memset(&sock_data, 0, sizeof sock_data);
   sock_data.listener = lsock;
-  for (i = 0; i < MAX_CONCURRENT_REQUESTS; i++) 
-    sock_data.cio[i] = cio[i];
 
   if (listen(lsock, SERV_BACKLOG) == -1) {
     perror("main listen");
     return -1;
   }
 
-  accept_watcher.data = &cio; // give the accept callback access to client table
+  accept_watcher.data = sock_data.cio; // give the accept callback access to client table
   // Initialize and start a watcher to accept client requests
   // attach function cb_acceptt as the callback with the listen socket as an arg
   ev_io_init(&accept_watcher, cb_accept, lsock, EV_READ);
@@ -112,6 +107,9 @@ int main(int argc, char *argv[])
 
   printf("Started server event loop\n");
   ev_run(mainloop, 0); // run listener callback under main event loop
+
+  ev_io_stop(mainloop, &sigint_watcher);
+  ev_io_stop(mainloop, &accept_watcher);
 
   return 0;
 }
@@ -141,21 +139,19 @@ void cb_sigint(struct ev_loop *loop, ev_io *watcher, int revents)
   
   use a timeout to make sure idle connections wont last forever
  */
-
-  printf("cb_sigint: %p\n", cio);
   printf("server: Shutting down\n");
   for (i = 0; i < MAX_CONCURRENT_REQUESTS; i++) {
     if (cio[i].status == 1) { // socket is active
       printf("server: Dropping peer connection on socket %d\n", cio[i].sock);
       net_disconnect_peer(&cio[i], ofbuf, RD_SZ);
+      printf("server: Closed connection to peer on socket %d\n", cio[i].sock);
     }
   } 
   printf("server: Closing listener on socket %d\n", sd->listener);
   shutdown(sd->listener, SHUT_RDWR); // TODO error checking
   close(sd->listener);
 
-
-  exit(0);
+  ev_break(loop, EVBREAK_ALL);
 }
 
 // event-driven wrapper for accept
@@ -166,7 +162,7 @@ void cb_accept(struct ev_loop *loop, ev_io *watcher, int revents)
   socklen_t sin_size = sizeof their_addr;
   char s [INET6_ADDRSTRLEN];
   int index;
-  ev_io *read_watcher;
+  ev_io *recv_watcher;
   ClientIO *cio = watcher->data;
 
   memset(s, 0, sizeof s);
@@ -180,7 +176,6 @@ void cb_accept(struct ev_loop *loop, ev_io *watcher, int revents)
   // client table
   index = net_get_peer_id(cio, MAX_CONCURRENT_REQUESTS);
 
-  printf("cb_accept: %p\n", cio);
   cio[index].status = 1;
   cio[index].sock = accept4(watcher->fd, (struct sockaddr *)&their_addr, 
         &sin_size, SOCK_CLOEXEC);
@@ -201,12 +196,11 @@ void cb_accept(struct ev_loop *loop, ev_io *watcher, int revents)
     s, sizeof s);
   printf("server: accepted connection from %s\n", s);
 
-  // these will have to be freed in the read callback
-  read_watcher = malloc(sizeof(ev_io));
-  read_watcher->data = &cio[index]; // so that callback can access client info through watcher
+  recv_watcher = malloc(sizeof(ClientIO)); // freed in recv callback
+  recv_watcher->data = (void *)&cio[index]; // so that callback can access client info through watcher
   
-  ev_io_init(read_watcher, cb_recv, cio[index].sock, EV_READ);
-  ev_io_start(loop, read_watcher); // add it to this loop
+  ev_io_init(recv_watcher, cb_recv, cio[index].sock, EV_READ);
+  ev_io_start(loop, recv_watcher); // add it to this loop
 }
 
 void cb_recv(struct ev_loop *loop, ev_io *watcher, int revents) 
