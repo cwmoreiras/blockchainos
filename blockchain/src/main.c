@@ -41,6 +41,17 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <pthread.h>
 #include <fcntl.h>
 
+int main_startup(int argc, char *argv[]) 
+{
+  #ifndef DEBUG
+  util_print_license();
+  #endif
+  if (main_process_cmd_args(argc, argv)) {
+    return 0;
+  }
+  return 0;
+}
+
 int main(int argc, char *argv[]) 
 // -----------------------------------------------------------------------------
 // Func: check command line arguments and start p2p server and client threads
@@ -49,7 +60,9 @@ int main(int argc, char *argv[])
 // Retn: 0 unless there is an error
 // -----------------------------------------------------------------------------
 {
-  ClientIO cio_table[MAX_CONCURRENT_REQUESTS];
+  int i;
+  ClientIO cio[MAX_CONCURRENT_REQUESTS];
+  SockData sock_data;
   // event handling variables
   struct ev_loop *mainloop = EV_DEFAULT;
   ev_io accept_watcher;
@@ -63,29 +76,38 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  startup(argc, argv); // handles command line arguments, print license logic
-  global_sig_attach(); // attach all signal handlers
+  main_startup(argc, argv); // handles command line arguments, print license logic
+  sig_attach_handler(); // attach all signal handlers
 
-  memset(cio_table, 0, sizeof cio_table);
+  memset(cio, 0, sizeof cio);
 
-  lsock = get_listener_socket(LISTEN_PORT); // get a listener socket 
+  lsock = net_get_listener_socket(LISTEN_PORT); // get a listener socket 
   if (lsock == -1) {
     perror("main get_listener_socket");
     return -1;
   }
+
+  // event loop will need all the socket information so that it can
+  // cleanly shut down the server
+  sock_data.listener = lsock;
+  for (i = 0; i < MAX_CONCURRENT_REQUESTS; i++) 
+    sock_data.cio[i] = cio[i];
 
   if (listen(lsock, SERV_BACKLOG) == -1) {
     perror("main listen");
     return -1;
   }
 
-  accept_watcher.data = &cio_table; // give the listener callback access to client table
+  accept_watcher.data = &cio; // give the accept callback access to client table
   // Initialize and start a watcher to accept client requests
-  // attach function accept_cb as the callback with the listen socket as an arg
-  ev_io_init(&accept_watcher, accept_cb, lsock, EV_READ);
+  // attach function cb_acceptt as the callback with the listen socket as an arg
+  ev_io_init(&accept_watcher, cb_accept, lsock, EV_READ);
   ev_io_start(mainloop, &accept_watcher);
 
-  ev_io_init(&sigint_watcher, sigint_cb, sig_pipe[0], EV_READ);
+  // sigint gets a copy of all the socket info, so the callback can shut down
+  // the server
+  sigint_watcher.data = &sock_data;
+  ev_io_init(&sigint_watcher, cb_sigint, sig_pipe[0], EV_READ);
   ev_io_start(mainloop, &sigint_watcher);
 
   printf("Started server event loop\n");
@@ -94,8 +116,17 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-void sigint_cb(struct ev_loop *loop, ev_io *watcher, int revents)
+void cb_sigint(struct ev_loop *loop, ev_io *watcher, int revents)
 {
+  int i;
+  char ofbuf[RD_SZ]; // overflow buffer
+  SockData *sd =   (SockData *)watcher->data;
+  ClientIO *cio = ((SockData *)watcher->data)->cio;
+  if (EV_ERROR & revents) {
+    perror("got invalid sigint event");
+    return;
+  }
+  
   // sigint has been received, need to clean things up
   // TODO clean shutdown routine
   // https://stackoverflow.com/questions/9681531/graceful-shutdown-server-socket-in-linux
@@ -109,29 +140,36 @@ void sigint_cb(struct ev_loop *loop, ev_io *watcher, int revents)
   3. close the listen socket
   
   use a timeout to make sure idle connections wont last forever
+ */
 
+  printf("cb_sigint: %p\n", cio);
+  printf("server: Shutting down\n");
+  for (i = 0; i < MAX_CONCURRENT_REQUESTS; i++) {
+    if (cio[i].status == 1) { // socket is active
+      printf("server: Dropping peer connection on socket %d\n", cio[i].sock);
+      net_disconnect_peer(&cio[i], ofbuf, RD_SZ);
+    }
+  } 
+  printf("server: Closing listener on socket %d\n", sd->listener);
+  shutdown(sd->listener, SHUT_RDWR); // TODO error checking
+  close(sd->listener);
 
-
-  */
-
-  if (EV_ERROR & revents) {
-    perror("got invalid listener event");
-    return;
-  }
 
   exit(0);
 }
 
 // event-driven wrapper for accept
 // ensures that we're not blocked on the accept call
-void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents) 
+void cb_accept(struct ev_loop *loop, ev_io *watcher, int revents) 
 {
   struct sockaddr_storage their_addr;
   socklen_t sin_size = sizeof their_addr;
   char s [INET6_ADDRSTRLEN];
   int index;
   ev_io *read_watcher;
-  ClientIO *cio_table = watcher->data;
+  ClientIO *cio = watcher->data;
+
+  memset(s, 0, sizeof s);
 
   if (EV_ERROR & revents) {
     perror("got invalid listener event");
@@ -140,61 +178,84 @@ void accept_cb(struct ev_loop *loop, ev_io *watcher, int revents)
 
   // find the lowest usable index for this client's entry in the
   // client table
-  index = get_client_id(cio_table, MAX_CONCURRENT_REQUESTS);
+  index = net_get_peer_id(cio, MAX_CONCURRENT_REQUESTS);
 
-  cio_table[index].status = 1;
-  cio_table[index].sock = accept4(watcher->fd, (struct sockaddr *)&their_addr, 
+  printf("cb_accept: %p\n", cio);
+  cio[index].status = 1;
+  cio[index].sock = accept4(watcher->fd, (struct sockaddr *)&their_addr, 
         &sin_size, SOCK_CLOEXEC);
+  if (cio[index].sock == -1) {
+    perror("cb_accept accept4");
+  }
   // fcntl(cio_table[index].sock, F_SETFL, O_NONBLOCK)
-  fcntl(cio_table[index].sock, 4, 04000);
+  fcntl(cio[index].sock, 4, 04000);
   
-  if (cio_table[index].sock == -1) {
-    perror("accept_cb");
+  if (cio[index].sock == -1) {
+    perror("cb_accep");
     return;
   }
-  cio_table[index].id = index;
+  cio[index].id = index;
 
   inet_ntop(their_addr.ss_family,
-    get_in_addr((struct sockaddr *)&their_addr),
+    net_get_in_addr((struct sockaddr *)&their_addr),
     s, sizeof s);
   printf("server: accepted connection from %s\n", s);
 
   // these will have to be freed in the read callback
   read_watcher = malloc(sizeof(ev_io));
-  read_watcher->data = &cio_table[index]; // so that callback can access client info through watcher
+  read_watcher->data = &cio[index]; // so that callback can access client info through watcher
   
-  ev_io_init(read_watcher, read_cb, cio_table[index].sock, EV_READ);
+  ev_io_init(read_watcher, cb_recv, cio[index].sock, EV_READ);
   ev_io_start(loop, read_watcher); // add it to this loop
 }
 
-void read_cb(struct ev_loop *loop, ev_io *watcher, int revents) 
+void cb_recv(struct ev_loop *loop, ev_io *watcher, int revents) 
 {
   ClientIO *cio = (ClientIO *)watcher->data; // get all the info on this client
 
   // TODO do stuff here
   // depending on what type of request has been made, we may have to do 
   // some different things
-  char buf[100];
+  char buf[RD_SZ];
+  char ofbuf[RD_SZ]; // overflow buffer
+
+  memset(buf, 0, sizeof buf);
 
   if (EV_ERROR & revents) {
     perror("got invalid client event");
     return;
   }
 
-  read(cio->sock, buf, 100);
+  recv(cio->sock, buf, RD_SZ, 0); // TODO flags, error checking, read in loop
   printf("%s", buf);
 
-  // cleanup
-  close(cio->sock);
-  cio->id = 0;
-  cio->status = 0;
+  net_disconnect_peer(cio, ofbuf, RD_SZ);
 
   ev_io_stop(loop, watcher); 
   free(watcher);
   printf("server: Disconnected peer\n");
 }
 
-int get_client_id(ClientIO *cio_table, int sz) 
+int net_disconnect_peer(ClientIO *cio, char *ofbuf, int sz) {
+  int rv = 0;
+  if (shutdown(cio->sock, SHUT_RDWR)) { // tell client im closing socket
+    rv = -1;
+    // shutdown failed
+  }
+  if (recv(cio->sock, ofbuf, sz, 0) == sz) { // one last read from socket
+    rv = -2; // we may not have gotten all the data
+  }
+  if (!close(cio->sock)) {
+    rv = -3;
+    // TODO fatal error?
+  }
+  cio->id = 0;
+  cio->status = 0;
+
+  return rv;
+}
+
+int net_get_peer_id(ClientIO *cio_table, int sz) 
 {
   int i;
 
@@ -208,7 +269,7 @@ int get_client_id(ClientIO *cio_table, int sz)
   return -1;
 }
 
-int get_listener_socket(const char *port) 
+int net_get_listener_socket(const char *port) 
 {
   struct addrinfo hints, *servinfo, *p;
   int rv;
@@ -257,23 +318,23 @@ int get_listener_socket(const char *port)
   return lsock;
 }
 
-void *get_in_addr(struct sockaddr *sa) 
+void *net_get_in_addr(struct sockaddr *sa) 
 {
   return sa->sa_family == AF_INET
     ? (void *) &(((struct sockaddr_in*)sa)->sin_addr)
     : (void *) &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-int global_sig_attach(void) {
-  struct sigaction int_action; // normal way to shut down server
+int sig_attach_handler(void) {
+  struct sigaction action; // normal way to shut down server
 
   // TODO sigint should be normal way to shut down cleanly
   
-  int_action.sa_handler = sigint_handler;
-  sigemptyset(&int_action.sa_mask);
-  int_action.sa_flags = SA_RESTART;
-  if (sigaction(SIGINT, &int_action, NULL) == -1) {
-    perror("sigaction SIGINT");
+  action.sa_handler = sig_handler;
+  sigemptyset(&action.sa_mask);
+  action.sa_flags = SA_RESTART;
+  if (sigaction(SIGINT, &action, NULL) == -1) {
+    perror("global_sig_attach sigaction");
     return -1;
   }
   
@@ -281,37 +342,24 @@ int global_sig_attach(void) {
 
 }
 
-void sigint_handler(int s) 
+void sig_handler(int s) 
 { // program shuts down nicely when sigint is received 
+  switch (s) {
+  case SIGINT: sig_int_handler(); break;
+  }
+}
+
+void sig_int_handler()
+{
   char tmp = MAIN_SHUTDOWN;
-  if (write(sig_pipe[1], &tmp, 1)) {
+  // write a byte to the pipe so the main callback loop
+  // will trigger the sigint event
+  if (write(sig_pipe[1], &tmp, 1) == -1) {
     perror("sigint_handler write");
   }
 }
 
-void sigchld_handler(int s)
-{
-  s = s; // suppress compiler warning
-  // waitpid() might overwrite errno, so we save and restore it:
-  int saved_errno = errno;
-
-  while(waitpid(-1, NULL, WNOHANG) > 0);
-
-  errno = saved_errno;
-}
-
-int startup(int argc, char *argv[]) 
-{
-  #ifndef DEBUG
-  util_print_license();
-  #endif
-  if (process_cmd_args(argc, argv)) {
-    return 0;
-  }
-  return 0;
-}
-
-int process_cmd_args(int argc, char *argv[]) 
+int main_process_cmd_args(int argc, char *argv[]) 
 {
   // check command line arguments
   // right now, if the argument is -h then argv[1][1] will be hashed
