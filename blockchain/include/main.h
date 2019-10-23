@@ -41,7 +41,7 @@ int sig_pipe[2]; // used in shutdown routine
 typedef struct {
     int status;
     int sock;
-    int id;
+    int id; // currently not being used
 } ClientIO;
 
 typedef struct {
@@ -65,9 +65,10 @@ void cb_sigint(struct ev_loop *loop, ev_io *watcher, int revents);
 
 
 // networking
+int net_get_localip();
 int net_disconnect_peer(ClientIO *cio, char *ofbuf, int sz);
 int net_get_peer_id(ClientIO *cio_table, int sz);
-int net_get_listener_socket();
-void *net_get_in_addr(struct sockaddr *sa);
+int net_get_listener();
+void *net_get_inaddr(struct sockaddr *sa);
 
 #endif

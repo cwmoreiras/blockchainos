@@ -40,9 +40,35 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <ev.h>
 #include <pthread.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
+#include <limits.h>
+
+int net_get_localip() 
+{
+  char host_buf[HOST_NAME_MAX];
+  char *ip_buf;
+  struct hostent *host_entry;
+
+  if (gethostname(host_buf, sizeof host_buf) == -1) {
+    perror("net_get_localip gethostname");
+    return -1;
+  }
+  if ((host_entry = gethostbyname(host_buf)) == NULL) {
+    perror("net_get_localip gethostbyname");
+    return -1;
+  }
+  ip_buf = inet_ntoa(*((struct in_addr*) 
+            host_entry->h_addr_list[0])); 
+
+  printf("Hostname: %s\n", host_buf);
+  printf("Host IP : %s\n", ip_buf);
+  return 0;
+}
 
 int main_startup(int argc, char *argv[]) 
 {
+  net_get_localip();
+
   #ifndef DEBUG
   util_print_license();
   #endif
@@ -77,7 +103,7 @@ int main(int argc, char *argv[])
   main_startup(argc, argv); // handles command line arguments, print license logic
   sig_attach_handler(); // attach all signal handlers
 
-  lsock = net_get_listener_socket(LISTEN_PORT); // get a listener socket 
+  lsock = net_get_listener(LISTEN_PORT); // get a listener socket 
   if (lsock == -1) {
     perror("main get_listener_socket");
     return -1;
@@ -189,10 +215,10 @@ void cb_accept(struct ev_loop *loop, ev_io *watcher, int revents)
     perror("cb_accep");
     return;
   }
-  cio[index].id = index;
+  cio[index].id = index; // not being used for anything
 
   inet_ntop(their_addr.ss_family,
-    net_get_in_addr((struct sockaddr *)&their_addr),
+    net_get_inaddr((struct sockaddr *)&their_addr),
     s, sizeof s);
   printf("server: accepted connection from %s\n", s);
 
@@ -263,7 +289,7 @@ int net_get_peer_id(ClientIO *cio_table, int sz)
   return -1;
 }
 
-int net_get_listener_socket(const char *port) 
+int net_get_listener(const char *port) 
 {
   struct addrinfo hints, *servinfo, *p;
   int rv;
@@ -275,7 +301,7 @@ int net_get_listener_socket(const char *port)
   hints.ai_flags = AI_PASSIVE;
 
   if ((rv = getaddrinfo(NULL, port, &hints, &servinfo)) != 0) {
-    fprintf(stderr, " server getaddrinfo: %s\n", gai_strerror(rv));
+    fprintf(stderr, "server getaddrinfo: %s\n", gai_strerror(rv));
     return -1;
   }
 
@@ -312,7 +338,7 @@ int net_get_listener_socket(const char *port)
   return lsock;
 }
 
-void *net_get_in_addr(struct sockaddr *sa) 
+void *net_get_inaddr(struct sockaddr *sa) 
 {
   return sa->sa_family == AF_INET
     ? (void *) &(((struct sockaddr_in*)sa)->sin_addr)
