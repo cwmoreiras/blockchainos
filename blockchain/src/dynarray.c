@@ -24,9 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // private functions, access through dynarray object
 int dynarray_insert(DynArray *this, uint8_t element, uint64_t index);
-uint8_t dynarray_remove(DynArray *this, uint64_t index, int *valid);
+int dynarray_remove(DynArray *this, uint64_t index, uint8_t *valid);
 int dynarray_set(DynArray *this, uint8_t element, uint64_t index);
-uint8_t dynarray_get(DynArray *this, uint64_t index, int *valid);
+int dynarray_get(DynArray *this, uint64_t index, uint8_t *valid);
 int dynarray_grow(DynArray *this);
 
 void dynarray_init(DynArray *this, uint64_t cap)
@@ -74,7 +74,6 @@ int dynarray_grow(DynArray *this)
   if ((this->buf = realloc(this->buf, this->cap*sizeof(void*))) == NULL) {
     return -1; // TODO error stuff
   }
-
   return 0;
 }
 
@@ -110,37 +109,29 @@ int dynarray_insert(DynArray *this, uint8_t element, uint64_t index)
   return 0;
 }
 
-// TODO - return an error code, and fill a buffer with a copy of the memory that
-//        is being removed, instead of what's happening now, which is
-//        the opposite
-// returns a pointer to the memory that is begin removed from the list
-// valid contains the error code
-uint8_t dynarray_remove(DynArray *this, uint64_t index, int *valid)
+int dynarray_remove(DynArray *this, uint64_t index, uint8_t *element_removed)
 // -----------------------------------------------------------------------------
 // Func: Remove an element from an arbitrary location
 // Args: this - a pointer to this dynarray object
 //       element - the index of the element to be deleted
-//       valid - when the function returns, will be set to 1 if a valid index
-//               was given, 0 otherwise. the caller should check this value to
-//               see if their data was valid.
-// Retn: the element being removed
+//       element_removed - the value of the element to be deleted as output parameter
+// Retn: return_code -  when the function returns, will be set to 1 if a valid index
+//                      was given, 0 otherwise. the caller should check this value to
+//                      see if their data was valid.
 // -----------------------------------------------------------------------------
 {
-  uint64_t i;
-  uint8_t element;
+  int return_code = 1;
 
-  // TODO - don't like how this is happening
   if (index >= this->sz)
-    *valid = 0;
-  *valid = 1;
-  element = this->buf[index];
+    return 0;
 
-  for (i = index; i < this->sz-1; i++) {
+  *element_removed = this->buf[index];
+
+  for (uint64_t i = index; (i < (this->sz) - 1); i++) {
     this->buf[i] = this->buf[i+1];
   }
   this->sz--;
-
-  return element;
+  return return_code; 
 }
 
 int dynarray_set(DynArray *this, uint8_t element, uint64_t index)
@@ -155,27 +146,27 @@ int dynarray_set(DynArray *this, uint8_t element, uint64_t index)
   if (index > this->sz) {
     return -1; // TODO index out of range
   }
-
+  
   this->buf[index] = element;
 
   return 0;
 }
 
-// TODO - return an error code, and fill a buffer with a copy of the memory that
-//        is being removed, instead of what's happening now, which is
-//        the opposite
-uint8_t dynarray_get(DynArray *this, uint64_t index, int *valid)
+int dynarray_get(DynArray *this, uint64_t index, uint8_t *element_retrieved)
 // -----------------------------------------------------------------------------
 // Func: Retrieve a pointer to the element at the given index
 // Args: this - a pointer to this dynarray object
-//       index - the index of the element to return
-//       valid - 1 if the index is in range, else 0
-// Retn: a pointer to the requested element
+//       index - the index of the element to be retrieved
+//       element - pointer to the element at index position as output parameter
+// Retn: return_code - an error code or success code to be checked by the caller
 // -----------------------------------------------------------------------------
 {
-  if (index >= this->sz)
-    *valid = 0;
-  *valid = 1;
+  int return_code = 1;
 
-  return this->buf[index];
+  if (index >= this->sz)
+    return 0;
+
+  *element_retrieved = this->buf[index];
+  
+  return return_code;
 }
