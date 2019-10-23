@@ -29,7 +29,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #include <ev.h>
 #include <pthread.h>
 
-#define LISTEN_PORT             "51223" // this has to be configurable
+#define LISTEN_PORT             "51228" // this has to be configurable
 #define SERV_BACKLOG            10
 #define MAX_CONCURRENT_REQUESTS 10
 #define MAIN_SHUTDOWN           'x'

@@ -222,7 +222,8 @@ void cb_accept(struct ev_loop *loop, ev_io *watcher, int revents)
     s, sizeof s);
   printf("server: accepted connection from %s\n", s);
 
-  recv_watcher = malloc(sizeof(ClientIO)); // freed in recv callback
+  recv_watcher = malloc(sizeof(ev_io));
+  // recv_watcher->data = malloc(sizeof cio[index]);
   recv_watcher->data = (void *)&cio[index]; // so that callback can access client info through watcher
   
   ev_io_init(recv_watcher, cb_recv, cio[index].sock, EV_READ);
@@ -251,8 +252,8 @@ void cb_recv(struct ev_loop *loop, ev_io *watcher, int revents)
 
   net_disconnect_peer(cio, ofbuf, RD_SZ);
 
-  ev_io_stop(loop, watcher); 
-  free(watcher);
+  ev_io_stop(loop, watcher);
+  free(watcher); 
   printf("server: Disconnected peer\n");
 }
 

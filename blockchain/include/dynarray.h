@@ -42,9 +42,9 @@ struct DynArray
 
   // member functions
   int (*insert)(DynArray *this, uint8_t element, uint64_t index);
-  int (*remove)(DynArray *this, uint64_t index, uint8_t *element_removed);
+  int (*remove)(DynArray *this, uint64_t index, uint8_t *element);
   int (*set)(DynArray *this, uint8_t element, uint64_t index);
-  int (*get)(DynArray *this, uint64_t index, uint8_t *element_retrieved);
+  int (*get)(DynArray *this, uint64_t index, uint8_t *element);
 };
 void dynarray_init(DynArray *this, uint64_t cap);
 void dynarray_destroy(DynArray *this);

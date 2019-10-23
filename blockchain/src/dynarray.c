@@ -24,9 +24,9 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // private functions, access through dynarray object
 int dynarray_insert(DynArray *this, uint8_t element, uint64_t index);
-int dynarray_remove(DynArray *this, uint64_t index, uint8_t *valid);
+int dynarray_remove(DynArray *this, uint64_t index, uint8_t *element);
 int dynarray_set(DynArray *this, uint8_t element, uint64_t index);
-int dynarray_get(DynArray *this, uint64_t index, uint8_t *valid);
+int dynarray_get(DynArray *this, uint64_t index, uint8_t *element);
 int dynarray_grow(DynArray *this);
 
 void dynarray_init(DynArray *this, uint64_t cap)
@@ -109,7 +109,7 @@ int dynarray_insert(DynArray *this, uint8_t element, uint64_t index)
   return 0;
 }
 
-int dynarray_remove(DynArray *this, uint64_t index, uint8_t *element_removed)
+int dynarray_remove(DynArray *this, uint64_t index, uint8_t *element)
 // -----------------------------------------------------------------------------
 // Func: Remove an element from an arbitrary location
 // Args: this - a pointer to this dynarray object
@@ -120,18 +120,19 @@ int dynarray_remove(DynArray *this, uint64_t index, uint8_t *element_removed)
 //                      see if their data was valid.
 // -----------------------------------------------------------------------------
 {
-  int return_code = 1;
+  uint64_t i;
+  int rc = 1;
 
   if (index >= this->sz)
     return 0;
 
-  *element_removed = this->buf[index];
+  *element = this->buf[index];
 
-  for (uint64_t i = index; (i < (this->sz) - 1); i++) {
+  for (i = index; i < this->sz-1; i++) {
     this->buf[i] = this->buf[i+1];
   }
   this->sz--;
-  return return_code; 
+  return rc; 
 }
 
 int dynarray_set(DynArray *this, uint8_t element, uint64_t index)
@@ -152,7 +153,7 @@ int dynarray_set(DynArray *this, uint8_t element, uint64_t index)
   return 0;
 }
 
-int dynarray_get(DynArray *this, uint64_t index, uint8_t *element_retrieved)
+int dynarray_get(DynArray *this, uint64_t index, uint8_t *element)
 // -----------------------------------------------------------------------------
 // Func: Retrieve a pointer to the element at the given index
 // Args: this - a pointer to this dynarray object
@@ -161,12 +162,12 @@ int dynarray_get(DynArray *this, uint64_t index, uint8_t *element_retrieved)
 // Retn: return_code - an error code or success code to be checked by the caller
 // -----------------------------------------------------------------------------
 {
-  int return_code = 1;
+  int rc = 1;
 
   if (index >= this->sz)
     return 0;
 
-  *element_retrieved = this->buf[index];
+  *element = this->buf[index];
   
-  return return_code;
+  return rc;
 }
